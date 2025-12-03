@@ -72,6 +72,13 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
             },
             onMessageChunk: (chunk: string) => {
                 currentAiMessageRef.current += chunk;
+
+                // Check for specific backend error message that might be streamed as content
+                if (currentAiMessageRef.current.includes("Error calling Gemini API") ||
+                    currentAiMessageRef.current.includes("Your API key was reported as leaked")) {
+                    currentAiMessageRef.current = "I apologize, but I'm currently unable to process your request due to a temporary service disruption. Please try again later.";
+                }
+
                 setMessages(prev => {
                     const newMessages = [...prev];
                     const lastMsg = newMessages[newMessages.length - 1];
