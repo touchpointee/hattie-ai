@@ -5,8 +5,10 @@ export class SignalRService {
     private callbacks: any = {};
 
     constructor(tenantId: string, language: string = 'en') {
+
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://localhost:7157';
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl(`https://localhost:7157/hattieHub?tenantId=${tenantId}&language=${language}`)
+            .withUrl(`${apiUrl}/hattieHub?tenantId=${tenantId}&language=${language}`)
             .withAutomaticReconnect()
             .build();
 
