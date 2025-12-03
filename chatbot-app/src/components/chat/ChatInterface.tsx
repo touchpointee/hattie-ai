@@ -42,8 +42,8 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
     const currentAiMessageRef = useRef<string>("");
 
     useEffect(() => {
-        // Fetch tenant name
-        fetch(`${import.meta.env.VITE_API_URL}/api/tenants/${chatbotId}`)
+        const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
+        fetch(`${apiUrl}/api/tenants/${chatbotId}`)
             .then(res => res.json())
             .then(data => {
                 if (data && data.name) {

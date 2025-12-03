@@ -6,7 +6,8 @@ export class SignalRService {
 
     constructor(tenantId: string, language: string = 'en') {
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://localhost:7157';
+        // Check for custom API URL in window.HattieAI config, otherwise use production URL
+        const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
         this.connection = new signalR.HubConnectionBuilder()
             .withUrl(`${apiUrl}/hattieHub?tenantId=${tenantId}&language=${language}`)
             .withAutomaticReconnect()

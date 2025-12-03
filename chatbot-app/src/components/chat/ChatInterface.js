@@ -28,8 +28,8 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
     const signalRRef = useRef(null);
     const currentAiMessageRef = useRef("");
     useEffect(() => {
-        // Fetch tenant name
-        fetch(`${import.meta.env.VITE_API_URL}/api/tenants/${chatbotId}`)
+        const apiUrl = window.HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
+        fetch(`${apiUrl}/api/tenants/${chatbotId}`)
             .then(res => res.json())
             .then(data => {
             if (data && data.name) {
