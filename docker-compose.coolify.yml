@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  hattie-api:
+    build:
+      context: .
+      dockerfile: HattieAI.API/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=${CONNECTION_STRING}
+      - Gemini__ApiKey=${GEMINI_API_KEY}
+    restart: always
+
+  hattie-portal:
+    build:
+      context: .
+      dockerfile: HattieAI.Portal/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=${CONNECTION_STRING}
+      - Gemini__ApiKey=${GEMINI_API_KEY}
+      # If Portal needs to talk to API server-side:
+      - ApiSettings__BaseUrl=http://hattie-api:8080
+    depends_on:
+      - hattie-api
+    restart: always

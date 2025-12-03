@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: hattie_user
+      POSTGRES_PASSWORD: hattie_password
+      POSTGRES_DB: hattie_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@hattie.ai
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  hattie-api:
+    build:
+      context: .
+      dockerfile: HattieAI.API/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=hattie_db;Username=hattie_user;Password=hattie_password
+      - Gemini__ApiKey=${GEMINI_API_KEY}
+    ports:
+      - "5000:8080"
+    depends_on:
+      - postgres
+
+  hattie-portal:
+    build:
+      context: .
+      dockerfile: HattieAI.Portal/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=hattie_db;Username=hattie_user;Password=hattie_password
+      - Gemini__ApiKey=${GEMINI_API_KEY}
+    ports:
+      - "5001:8080"
+    depends_on:
+      - postgres
+
+  chatbot-app:
+    build:
+      context: ./chatbot-app
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+
+
+volumes:
+  postgres_data:

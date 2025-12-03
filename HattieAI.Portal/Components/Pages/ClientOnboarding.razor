@@ -1,0 +1,91 @@
+@page "/clients"
+@using HattieAI.Domain.Entities
+@using HattieAI.Infrastructure.Persistence
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject HattieDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3>Client Management</h3>
+
+<EditForm Model="@newTenant" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Client Name</label>
+        <InputText class="form-control" @bind-Value="newTenant.Name" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">System Instruction</label>
+        <InputTextArea class="form-control" @bind-Value="newTenant.SystemInstruction" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Client</button>
+</EditForm>
+
+@if (showSuccess)
+{
+    <div class="alert alert-success mt-3">Client created successfully!</div>
+}
+
+<hr />
+
+<h3>Existing Clients</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Integration Link</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var tenant in tenants)
+        {
+            <tr>
+                <td>@tenant.Name</td>
+                <td>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="http://localhost:5173/?tenantId=@tenant.Id" readonly />
+                        <button class="btn btn-outline-secondary" @onclick="() => CopyToClipboard(tenant.Id)">Copy</button>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private Tenant newTenant = new Tenant();
+    private List<Tenant> tenants = new List<Tenant>();
+    private bool showSuccess = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTenants();
+    }
+
+    private async Task LoadTenants()
+    {
+        tenants = await DbContext.Tenants.IgnoreQueryFilters().ToListAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        DbContext.Tenants.Add(newTenant);
+        await DbContext.SaveChangesAsync();
+        showSuccess = true;
+        newTenant = new Tenant(); // Reset
+        await LoadTenants();
+    }
+
+    private void CopyToClipboard(Guid tenantId)
+    {
+        // In a real app, use JSInterop to copy to clipboard
+        // For now, user can manually copy from the input box
+    }
+}

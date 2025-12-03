@@ -1,0 +1,6 @@
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Infrastructure\obj\Debug\net9.0\HattieAI.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Infrastructure\obj\Debug\net9.0\HattieAI.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Infrastructure\obj\Debug\net9.0\HattieAI.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Infrastructure\obj\Debug\net9.0\HattieAI.Infrastructure.AssemblyInfo.cs
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Infrastructure\obj\Debug\net9.0\HattieAI.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Infrastructure\obj\Debug\net9.0\HattieAI.Infrastructure.sourcelink.json

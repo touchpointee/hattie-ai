@@ -1,0 +1,32 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">HattieAI.Portal</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="clients">
+                        <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span> Clients
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="knowledge-base">
+                        <span class="bi bi-book-fill-nav-menu" aria-hidden="true"></span> Knowledge Base
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <div class="nav-item px-3">
+            <a class="nav-link" href="https://localhost:7157/swagger" target="_blank">
+                <span class="bi bi-file-earmark-code-fill-nav-menu" aria-hidden="true"></span> API Swagger
+            </a>
+        </div>
+    </nav>
+</div>
+

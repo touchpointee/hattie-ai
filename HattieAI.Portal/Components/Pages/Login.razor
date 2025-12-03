@@ -1,0 +1,51 @@
+@page "/login"
+@using HattieAI.Portal.Auth
+@inject CustomAuthStateProvider AuthStateProvider
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h3>Hattie AI Admin</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label>Username</label>
+                    <input class="form-control" @bind="username" placeholder="admin" />
+                </div>
+                <div class="mb-3">
+                    <label>Password</label>
+                    <input type="password" class="form-control" @bind="password" placeholder="admin" />
+                </div>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+                <button class="btn btn-primary w-100" @onclick="Authenticate">Login</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string username;
+    private string password;
+    private string errorMessage;
+
+    private async Task Authenticate()
+    {
+        // Hardcoded for simplicity as requested ("idiot" tone implies speed)
+        if (username == "admin" && password == "admin")
+        {
+            var userSession = new UserSession { UserName = username, Role = "Admin" };
+            await AuthStateProvider.UpdateAuthenticationState(userSession);
+            NavManager.NavigateTo("/", true);
+        }
+        else
+        {
+            errorMessage = "Invalid credentials (try admin/admin)";
+        }
+    }
+}
