@@ -23,10 +23,22 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sessionId, setSessionId] = useState(null);
+    const [tenantName, setTenantName] = useState('');
     const messagesEndRef = useRef(null);
     const signalRRef = useRef(null);
     const currentAiMessageRef = useRef("");
+
     useEffect(() => {
+        // Fetch tenant name
+        fetch(`${import.meta.env.VITE_API_URL}/api/tenants/${chatbotId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.name) {
+                    setTenantName(data.name);
+                }
+            })
+            .catch(err => console.error("Failed to fetch tenant name:", err));
+
         const service = new SignalRService(chatbotId, language);
         signalRRef.current = service;
         service.setCallbacks({
@@ -39,10 +51,10 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
                 setLoading(false); // Stop loading spinner, start showing stream
                 // Add placeholder message for AI
                 setMessages(prev => [...prev, {
-                        id: Date.now().toString(),
-                        role: 'assistant',
-                        content: ''
-                    }]);
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: ''
+                }]);
             },
             onMessageChunk: (chunk) => {
                 currentAiMessageRef.current += chunk;
@@ -60,24 +72,29 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
             },
             onError: (err) => {
                 setMessages(prev => [...prev, {
-                        id: Date.now().toString(),
-                        role: 'assistant',
-                        content: `Error: ${err}`
-                    }]);
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: `Error: ${err}`
+                }]);
                 setLoading(false);
             }
         });
         service.start();
         return () => {
-            // Cleanup connection if needed
+            if (service && typeof service.stop === 'function') {
+                service.stop();
+            }
         };
     }, [chatbotId, language]);
+
     useEffect(() => {
         scrollToBottom();
     }, [messages, loading]);
+
     function scrollToBottom() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
+
     async function handleSend() {
         if (!input.trim() || loading)
             return;
@@ -96,19 +113,37 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
             await signalRRef.current.sendMessage(userMessage, sessionId);
         }
     }
+
     function handleKeyDown(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();
         }
     }
-    return (_jsxs("div", { className: "modal-chat-container", children: [_jsx("div", { className: "modal-messages-container", children: messages.length === 0 ? (_jsxs("div", { className: "modal-welcome-screen", children: [_jsx("div", { className: "centered-logo", children: _jsx("div", { className: "logo-circle", children: _jsx("img", { src: "/raco.png", alt: "Logo", style: {
-                                        width: '80px',
-                                        height: 'auto',
-                                        objectFit: 'contain'
-                                    } }) }) }), _jsx("div", { className: "today-divider", children: _jsx("span", { children: t.today }) }), _jsxs("div", { className: "welcome-message-container", style: { direction: language === 'ar' ? 'rtl' : 'ltr' }, children: [_jsx("div", { className: "bot-avatar-small", children: _jsx("img", { src: "/raco.png", alt: "Bot", style: {
-                                            width: '28px',
-                                            height: 'auto',
-                                            objectFit: 'contain'
-                                        } }) }), _jsxs("div", { className: "welcome-message-content", children: [_jsx("h3", { className: "welcome-greeting", children: t.greeting }), _jsx("p", { className: "welcome-description", children: t.description })] })] })] })) : (_jsxs(_Fragment, { children: [messages.map((msg, index) => (_jsxs("div", { className: `chat-message ${msg.role}`, children: [msg.role === 'assistant' && (_jsx("div", { className: "chat-avatar bot-avatar", children: _jsx("img", { src: "/raco.png", alt: "Bot" }) })), _jsx("div", { className: `chat-bubble ${msg.role}`, children: msg.content })] }, index))), loading && (_jsxs("div", { className: "chat-message assistant", children: [_jsx("div", { className: "chat-avatar bot-avatar", children: _jsx("img", { src: "/raco.png", alt: "Bot" }) }), _jsx("div", { className: "chat-bubble assistant", children: _jsxs("div", { className: "typing-indicator", children: [_jsx("div", { className: "typing-dot" }), _jsx("div", { className: "typing-dot" }), _jsx("div", { className: "typing-dot" })] }) })] })), _jsx("div", { ref: messagesEndRef })] })) }), _jsx("div", { className: "modal-input-container", style: { direction: language === 'ar' ? 'rtl' : 'ltr' }, children: _jsxs("div", { className: "modal-input-wrapper", children: [_jsx("input", { type: "text", className: "modal-message-input", value: input, onChange: (e) => setInput(e.target.value), onKeyDown: handleKeyDown, placeholder: t.placeholder, disabled: loading, style: { textAlign: language === 'ar' ? 'right' : 'left' } }), _jsx("button", { className: "modal-send-button", onClick: handleSend, disabled: !input.trim() || loading, "aria-label": "Send message", children: _jsx("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "currentColor", children: _jsx("path", { d: "M10 3L10 17M10 3L4 9M10 3L16 9", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", fill: "none" }) }) })] }) })] }));
+
+    return (_jsxs("div", {
+        className: "modal-chat-container", children: [_jsx("div", {
+            className: "modal-messages-container", children: messages.length === 0 ? (_jsxs("div", {
+                className: "modal-welcome-screen", children: [_jsx("div", {
+                    className: "centered-logo", children: _jsx("img", {
+                        src: "/hattie.png", alt: "Logo", style: {
+                            width: '120px',
+                            height: 'auto',
+                            objectFit: 'contain'
+                        }
+                    })
+                }), _jsx("div", { className: "today-divider", children: _jsx("span", { children: t.today }) }), _jsxs("div", {
+                    className: "welcome-message-container", style: { direction: language === 'ar' ? 'rtl' : 'ltr' }, children: [_jsx("div", {
+                        className: "bot-avatar-small", children: _jsx("img", {
+                            src: "/hattie.png", alt: "Bot", style: {
+                                width: '28px',
+                                height: 'auto',
+                                objectFit: 'contain'
+                            }
+                        })
+                    }), _jsxs("div", { className: "welcome-message-content", children: [_jsx("h3", { className: "welcome-greeting", children: t.greeting }), _jsx("p", { className: "welcome-description", children: tenantName ? `${tenantName} AI Assistant` : t.description })] })]
+                })]
+            })) : (_jsxs(_Fragment, { children: [messages.map((msg, index) => (_jsxs("div", { className: `chat-message ${msg.role}`, children: [msg.role === 'assistant' && (_jsx("div", { className: "chat-avatar bot-avatar", children: _jsx("img", { src: "/hattie.png", alt: "Bot" }) })), _jsx("div", { className: `chat-bubble ${msg.role}`, children: msg.content })] }, index))), loading && (_jsxs("div", { className: "chat-message assistant", children: [_jsx("div", { className: "chat-avatar bot-avatar", children: _jsx("img", { src: "/hattie.png", alt: "Bot" }) }), _jsx("div", { className: "chat-bubble assistant", children: _jsxs("div", { className: "typing-indicator", children: [_jsx("div", { className: "typing-dot" }), _jsx("div", { className: "typing-dot" }), _jsx("div", { className: "typing-dot" })] }) })] })), _jsx("div", { ref: messagesEndRef })] }))
+        }), _jsx("div", { className: "modal-input-container", style: { direction: language === 'ar' ? 'rtl' : 'ltr' }, children: _jsxs("div", { className: "modal-input-wrapper", children: [_jsx("input", { type: "text", className: "modal-message-input", value: input, onChange: (e) => setInput(e.target.value), onKeyDown: handleKeyDown, placeholder: t.placeholder, disabled: loading, style: { textAlign: language === 'ar' ? 'right' : 'left' } }), _jsx("button", { className: "modal-send-button", onClick: handleSend, disabled: !input.trim() || loading, "aria-label": "Send message", children: _jsx("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "currentColor", children: _jsx("path", { d: "M10 3L10 17M10 3L4 9M10 3L16 9", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", fill: "none" }) }) })] }) })]
+    }));
 }

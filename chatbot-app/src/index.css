@@ -1,3 +1,5 @@
+@import './chatbot-styles.css';
+
 :root {
     /* Color Palette - Premium Dark Theme */
     --color-bg-primary: #0a0a0f;
@@ -1369,6 +1371,7 @@ p {
         opacity: 0;
         transform: scale(0.95) translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -1660,23 +1663,23 @@ p {
     .modal-overlay {
         padding: 0;
     }
-    
+
     .modal-chatbot-container {
         width: 100%;
         height: 100%;
         max-height: 100vh;
         border-radius: 0;
     }
-    
+
     .modal-chatbot-header {
         border-radius: 0;
     }
-    
+
     .logo-circle {
         width: 100px;
         height: 100px;
     }
-    
+
     .logo-text-large {
         font-size: 1.25rem;
     }
@@ -1700,6 +1703,7 @@ p {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1820,7 +1824,7 @@ p {
         bottom: 10px;
         right: 10px;
     }
-    
+
     .chatbot-popup-container {
         width: calc(100vw - 20px);
         max-width: 400px;
@@ -1844,6 +1848,7 @@ p {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -2011,33 +2016,33 @@ p {
     .nav-header {
         padding: 1rem;
     }
-    
+
     .company-name {
         font-size: 1.2rem;
     }
-    
+
     .logo-image {
         height: 40px;
     }
-    
+
     .grid-container {
         width: 400px;
         height: 300px;
     }
-    
+
     .grid-item h3 {
         font-size: 1.2rem;
     }
-    
+
     .grid-item.center {
         width: 100px;
         height: 100px;
     }
-    
+
     .grid-item.center h2 {
         font-size: 2rem;
     }
-    
+
     .hero-actions {
         right: 1rem;
     }
@@ -2048,16 +2053,16 @@ p {
         width: 300px;
         height: 250px;
     }
-    
+
     .grid-item h3 {
         font-size: 1rem;
     }
-    
+
     .grid-item.center {
         width: 80px;
         height: 80px;
     }
-    
+
     .grid-item.center h2 {
         font-size: 1.5rem;
     }
@@ -2081,6 +2086,7 @@ p {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -2216,10 +2222,14 @@ p {
 }
 
 @keyframes typingBounce {
-    0%, 60%, 100% {
+
+    0%,
+    60%,
+    100% {
         opacity: 0.3;
         transform: translateY(0);
     }
+
     30% {
         opacity: 1;
         transform: translateY(-4px);
@@ -2257,6 +2267,7 @@ p {
         opacity: 0;
         transform: translateY(20px) scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -2290,11 +2301,11 @@ p {
         padding: 14px 24px;
         font-size: 0.9rem;
     }
-    
+
     .chat-button-text {
         display: none;
     }
-    
+
     .floating-chat-button {
         width: 60px;
         height: 60px;
@@ -2302,7 +2313,7 @@ p {
         justify-content: center;
         border-radius: 50%;
     }
-    
+
     .chat-icon {
         width: 32px;
         height: 32px;
@@ -2328,7 +2339,7 @@ p {
     .container {
         padding: var(--spacing-md);
     }
-    
+
     .hero-section {
         padding: 2rem 1rem;
     }
@@ -2336,56 +2347,57 @@ p {
 
 /* Mobile landscape and portrait */
 @media (max-width: 768px) {
+
     /* Typography adjustments */
     h1 {
         font-size: var(--font-size-2xl);
     }
-    
+
     h2 {
         font-size: var(--font-size-xl);
     }
-    
+
     /* Landing page adjustments */
     .landing-footer {
         padding: 1.5rem 1rem;
     }
-    
+
     .footer-title {
         font-size: 0.8rem;
     }
-    
+
     .footer-text {
         font-size: 0.85rem;
     }
-    
+
     /* Chat messages mobile optimization */
     .chat-bubble {
         max-width: 80%;
         font-size: 0.9rem;
         padding: 12px 16px;
     }
-    
+
     .chat-avatar {
         width: 36px;
         height: 36px;
     }
-    
+
     /* Modal chat container */
     .modal-messages-container {
         padding: var(--spacing-md);
     }
-    
+
     .modal-input-container {
         padding: var(--spacing-md);
     }
-    
+
     /* Welcome screen mobile */
     .welcome-message-container {
         flex-direction: column;
         align-items: center;
         text-align: center;
     }
-    
+
     .bot-avatar-small {
         margin-bottom: var(--spacing-sm);
     }
@@ -2393,96 +2405,97 @@ p {
 
 /* Small mobile devices */
 @media (max-width: 480px) {
+
     /* Further reduce text sizes */
     .company-name {
         font-size: 1rem;
     }
-    
+
     .logo-image {
         height: 35px;
     }
-    
+
     /* Grid adjustments */
     .grid-container {
         width: 280px;
         height: 220px;
     }
-    
+
     .grid-item {
         padding: 0.75rem;
     }
-    
+
     .grid-item h3 {
         font-size: 0.85rem;
         line-height: 1.3;
     }
-    
+
     .grid-item.center {
         width: 70px;
         height: 70px;
     }
-    
+
     .grid-item.center h2 {
         font-size: 1.3rem;
     }
-    
+
     /* Footer mobile */
     .landing-footer {
         padding: 1rem;
     }
-    
+
     .footer-title {
         font-size: 0.75rem;
         margin-bottom: 0.5rem;
     }
-    
+
     .footer-text {
         font-size: 0.8rem;
         line-height: 1.5;
     }
-    
+
     /* Chat bubbles very small screens */
     .chat-bubble {
         max-width: 85%;
         font-size: 0.85rem;
         padding: 10px 14px;
     }
-    
+
     .chat-avatar {
         width: 32px;
         height: 32px;
     }
-    
+
     /* Welcome screen small mobile */
     .logo-circle {
         width: 90px;
         height: 90px;
         padding: 15px;
     }
-    
+
     .welcome-greeting {
         font-size: 0.9rem;
     }
-    
+
     .welcome-description {
         font-size: 0.8rem;
     }
-    
+
     /* Input area mobile */
     .modal-input-wrapper {
         padding: 4px 8px;
     }
-    
+
     .modal-message-input {
         font-size: 0.85rem;
         padding: 8px;
     }
-    
+
     .modal-send-button {
         width: 32px;
         height: 32px;
     }
-    
+
     .privacy-link a {
         font-size: 0.7rem;
     }
@@ -2494,24 +2507,24 @@ p {
         width: 260px;
         height: 200px;
     }
-    
+
     .grid-item h3 {
         font-size: 0.75rem;
     }
-    
+
     .grid-item.center {
         width: 60px;
         height: 60px;
     }
-    
+
     .grid-item.center h2 {
         font-size: 1.1rem;
     }
-    
+
     .company-name {
         font-size: 0.9rem;
     }
-    
+
     .logo-image {
         height: 30px;
     }
@@ -2522,16 +2535,16 @@ p {
     .hero-section {
         padding: 1rem;
     }
-    
+
     .grid-container {
         width: 350px;
         height: 250px;
     }
-    
+
     .landing-footer {
         padding: 1rem;
     }
-    
+
     .footer-text {
         font-size: 0.8rem;
     }
@@ -2539,6 +2552,7 @@ p {
 
 /* Touch device optimizations */
 @media (hover: none) and (pointer: coarse) {
+
     /* Increase touch targets */
     .btn,
     .icon-btn,
@@ -2546,12 +2560,12 @@ p {
         min-height: 44px;
         min-width: 44px;
     }
-    
+
     .modal-send-button {
         min-width: 44px;
         min-height: 44px;
     }
-    
+
     /* Prevent text selection on buttons */
     button {
         -webkit-tap-highlight-color: transparent;
@@ -2594,7 +2608,7 @@ p {
         height: 85vh;
         max-height: calc(100vh - 20px);
     }
-    
+
     .chatbot-widget-popup.minimized {
         height: auto;
     }
@@ -2723,7 +2737,7 @@ p {
     .chatbot-logo-center img {
         height: 28px;
     }
-    
+
     .lang-btn {
         font-size: 0.8rem;
         padding: 6px 12px;

@@ -59,4 +59,13 @@ export class SignalRService {
             console.error("SendMessage Error: ", err);
         }
     }
+
+    public async stop() {
+        try {
+            await this.connection.stop();
+            console.log("SignalR Disconnected.");
+        } catch (err) {
+            console.error("SignalR Stop Error: ", err);
+        }
+    }
 }

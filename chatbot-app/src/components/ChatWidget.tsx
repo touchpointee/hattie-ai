@@ -7,7 +7,7 @@ interface ChatWidgetProps {
 }
 
 export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
-    const [isMinimized, setIsMinimized] = useState(true); // Start minimized
+    const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [language, setLanguage] = useState<'en' | 'ar'>('en');
 
@@ -18,26 +18,45 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
     if (!mounted) return null;
 
     return createPortal(
-        <div className={`chatbot-widget-popup ${isMinimized ? 'minimized' : ''}`}>
-            {/* Header */}
-            <div className="chatbot-header" onClick={() => setIsMinimized(!isMinimized)} style={{ cursor: 'pointer' }}>
-                <div className="chatbot-logo-center">
-                    <img src="/raco.png" alt="RACO Groups" />
+        <>
+            {/* Floating Button */}
+            {!isOpen && (
+                <button
+                    className="chatbot-floating-btn"
+                    onClick={() => setIsOpen(true)}
+                    aria-label="Open Chat"
+                >
+                    <span className="chatbot-btn-text">Ask Hattie</span>
+                    <div className="chatbot-btn-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="currentColor" />
+                        </svg>
+                    </div>
+                </button>
+            )}
+
+            {/* Chat Window */}
+            {/* Chat Window */}
+            <div className="chatbot-widget-popup open" style={{ display: isOpen ? 'flex' : 'none' }}>
+                {/* Header */}
+                <div className="chatbot-header">
+                    <div className="chatbot-logo-center">
+                        <img src="/hattie.png" alt="Hattie AI" />
+                        <span className="chatbot-title">Hattie AI</span>
+                    </div>
+
+                    <div className="chatbot-header-controls">
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="chatbot-control-btn"
+                            aria-label="Minimize"
+                        >
+                            —
+                        </button>
+                    </div>
                 </div>
 
-                <div className="chatbot-header-controls">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
-                        className="chatbot-control-btn"
-                        aria-label={isMinimized ? "Maximize" : "Minimize"}
-                    >
-                        {isMinimized ? '+' : '—'}
-                    </button>
-                </div>
-            </div>
-
-            {/* Language Selector */}
-            {!isMinimized && (
+                {/* Language Selector */}
                 <div className="language-selector">
                     <button
                         className={`lang-btn ${language === 'en' ? 'active' : ''}`}
@@ -52,15 +71,13 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
                         العربية
                     </button>
                 </div>
-            )}
 
-            {/* Chat Body */}
-            {!isMinimized && (
+                {/* Chat Body */}
                 <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                     <ChatInterface chatbotId={chatbotId} language={language} />
                 </div>
-            )}
-        </div>,
+            </div>
+        </>,
         document.body
     );
 }
