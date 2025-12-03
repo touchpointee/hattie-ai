@@ -16,14 +16,14 @@ interface Props {
 const translations = {
     en: {
         greeting: 'Hello! I am your AI Assistant.',
-        description: "I'm here to answer questions based on our knowledge base.",
+        description: "",
         today: 'Today',
         placeholder: 'Message...',
         privacy: 'Privacy'
     },
     ar: {
         greeting: 'مرحباً! أنا مساعد الذكاء الاصطناعي الخاص بك.',
-        description: 'أنا هنا للإجابة على الأسئلة بناءً على قاعدة معارفنا.',
+        description: '',
         today: 'اليوم',
         placeholder: 'رسالة...',
         privacy: 'الخصوصية'
@@ -136,7 +136,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         <div className="centered-logo">
                             <div className="logo-circle">
                                 <img
-                                    src="/raco.png"
+                                    src="/hattie.png"
                                     alt="Logo"
                                     style={{
                                         width: '80px',
@@ -156,7 +156,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         <div className="welcome-message-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                             <div className="bot-avatar-small">
                                 <img
-                                    src="/raco.png"
+                                    src="/hattie.png"
                                     alt="Bot"
                                     style={{
                                         width: '28px',
@@ -179,7 +179,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                             <div key={index} className={`chat-message ${msg.role}`}>
                                 {msg.role === 'assistant' && (
                                     <div className="chat-avatar bot-avatar">
-                                        <img src="/raco.png" alt="Bot" />
+                                        <img src="/hattie.png" alt="Bot" />
                                     </div>
                                 )}
                                 <div className={`chat-bubble ${msg.role}`}>
@@ -190,7 +190,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         {loading && (
                             <div className="chat-message assistant">
                                 <div className="chat-avatar bot-avatar">
-                                    <img src="/raco.png" alt="Bot" />
+                                    <img src="/hattie.png" alt="Bot" />
                                 </div>
                                 <div className="chat-bubble assistant">
                                     <div className="typing-indicator">
