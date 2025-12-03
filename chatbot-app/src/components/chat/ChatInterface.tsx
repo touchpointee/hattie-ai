@@ -157,7 +157,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         <div className="centered-logo">
                             <div className="logo-circle">
                                 <img
-                                    src="/hattie.png"
+                                    src="https://hattieai.touchpointe.digital/hattie.png"
                                     alt="Logo"
                                     style={{
                                         width: '100%',
@@ -177,7 +177,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         <div className="welcome-message-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                             <div className="bot-avatar-small">
                                 <img
-                                    src="/hattie.png"
+                                    src="https://hattieai.touchpointe.digital/hattie.png"
                                     alt="Bot"
                                     style={{
                                         width: '28px',
@@ -200,7 +200,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                             <div key={index} className={`chat-message ${msg.role}`}>
                                 {msg.role === 'assistant' && (
                                     <div className="chat-avatar bot-avatar">
-                                        <img src="/hattie.png" alt="Bot" />
+                                        <img src="https://hattieai.touchpointe.digital/hattie.png" alt="Bot" />
                                     </div>
                                 )}
                                 <div className={`chat-bubble ${msg.role}`}>
@@ -211,7 +211,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         {loading && (
                             <div className="chat-message assistant">
                                 <div className="chat-avatar bot-avatar">
-                                    <img src="/hattie.png" alt="Bot" />
+                                    <img src="https://hattieai.touchpointe.digital/hattie.png" alt="Bot" />
                                 </div>
                                 <div className="chat-bubble assistant">
                                     <div className="typing-indicator">

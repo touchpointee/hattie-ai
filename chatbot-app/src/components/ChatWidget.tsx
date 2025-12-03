@@ -41,7 +41,7 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
                 {/* Header */}
                 <div className="chatbot-header">
                     <div className="chatbot-logo-center">
-                        <img src="/hattie.png" alt="Hattie AI" />
+                        <img src="https://hattieai.touchpointe.digital/hattie.png" alt="Hattie AI" />
                         <span className="chatbot-title">Hattie AI</span>
                     </div>
 
