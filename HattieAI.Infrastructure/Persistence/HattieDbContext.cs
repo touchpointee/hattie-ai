@@ -11,7 +11,12 @@ namespace HattieAI.Infrastructure.Persistence
 {
     public class HattieDbContext : DbContext
     {
-        private readonly string _currentTenantId;
+        private string _currentTenantId;
+        public string CurrentTenantId 
+        { 
+            get => _currentTenantId; 
+            set => _currentTenantId = value; 
+        }
 
         public HattieDbContext(DbContextOptions<HattieDbContext> options) : base(options)
         {
@@ -26,10 +31,12 @@ namespace HattieAI.Infrastructure.Persistence
         // but better to inject a service. 
         // Let's assume we have an ITenantProvider.
         
-        public HattieDbContext(DbContextOptions<HattieDbContext> options, ITenantProvider tenantProvider) : base(options)
+        /*
+        public HattieDbContext(DbContextOptions<HattieDbContext> options, ITenantProvider tenantProvider = null) : base(options)
         {
-            _currentTenantId = tenantProvider.TenantId;
+            _currentTenantId = tenantProvider?.TenantId;
         }
+        */
 
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<AppUser> AppUsers { get; set; }

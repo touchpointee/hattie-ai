@@ -68,6 +68,17 @@ app.UseHttpsRedirection();
 // Enable CORS
 app.UseCors("AllowAll");
 
+app.Use(async (context, next) =>
+{
+    var dbContext = context.RequestServices.GetService<HattieDbContext>();
+    var tenantProvider = context.RequestServices.GetService<ITenantProvider>();
+    if (dbContext != null && tenantProvider != null)
+    {
+        dbContext.CurrentTenantId = tenantProvider.TenantId;
+    }
+    await next();
+});
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 

@@ -1,5 +1,6 @@
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\appsettings.Development.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\appsettings.json
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.API.staticwebassets.runtime.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.API.staticwebassets.endpoints.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.API.exe
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.API.deps.json
@@ -117,4 +118,3 @@ C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\ob
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.pdb
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.genruntimeconfig.cache
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\ref\HattieAI.API.dll
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.API.staticwebassets.runtime.json

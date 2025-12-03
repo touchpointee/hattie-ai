@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  HattieAI.Domain -> C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\bin\Debug\net8.0\HattieAI.Domain.dll
+  HattieAI.Infrastructure -> C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Infrastructure\bin\Debug\net8.0\HattieAI.Infrastructure.dll
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\Program.cs(48,1): error CS1022: Type or namespace definition, or end-of-file expected [C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\HattieAI.Portal.csproj]
+
+Build FAILED.
+
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\Program.cs(48,1): error CS1022: Type or namespace definition, or end-of-file expected [C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\HattieAI.Portal.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.31
