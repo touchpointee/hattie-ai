@@ -125,12 +125,14 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
         className: "modal-chat-container", children: [_jsx("div", {
             className: "modal-messages-container", children: messages.length === 0 ? (_jsxs("div", {
                 className: "modal-welcome-screen", children: [_jsx("div", {
-                    className: "centered-logo", children: _jsx("img", {
-                        src: "/hattie.png", alt: "Logo", style: {
-                            width: '120px',
-                            height: 'auto',
-                            objectFit: 'contain'
-                        }
+                    className: "centered-logo", children: _jsx("div", {
+                        className: "logo-circle", children: _jsx("img", {
+                            src: "/hattie.png", alt: "Logo", style: {
+                                width: '100%',
+                                height: 'auto',
+                                objectFit: 'contain'
+                            }
+                        })
                     })
                 }), _jsx("div", { className: "today-divider", children: _jsx("span", { children: t.today }) }), _jsxs("div", {
                     className: "welcome-message-container", style: { direction: language === 'ar' ? 'rtl' : 'ltr' }, children: [_jsx("div", {
