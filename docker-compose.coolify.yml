@@ -1,7 +1,14 @@
 version: '3.8'
 
+networks:
+  coolify:
+    external: true
+
 services:
   hattie-api:
+    networks:
+      - coolify
+      - default
     build:
       context: .
       dockerfile: HattieAI.API/Dockerfile
@@ -11,6 +18,9 @@ services:
     restart: always
 
   hattie-portal:
+    networks:
+      - coolify
+      - default
     build:
       context: .
       dockerfile: HattieAI.Portal/Dockerfile
