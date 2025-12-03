@@ -4,7 +4,7 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
-@inject HattieDbContext DbContext
+@inject IDbContextFactory<HattieDbContext> DbFactory
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -71,13 +71,15 @@
 
     private async Task LoadTenants()
     {
-        tenants = await DbContext.Tenants.IgnoreQueryFilters().ToListAsync();
+        using var context = DbFactory.CreateDbContext();
+        tenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
     }
 
     private async Task HandleValidSubmit()
     {
-        DbContext.Tenants.Add(newTenant);
-        await DbContext.SaveChangesAsync();
+        using var context = DbFactory.CreateDbContext();
+        context.Tenants.Add(newTenant);
+        await context.SaveChangesAsync();
         showSuccess = true;
         newTenant = new Tenant(); // Reset
         await LoadTenants();

@@ -5,7 +5,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @attribute [Authorize]
-@inject HattieDbContext DbContext
+@inject IDbContextFactory<HattieDbContext> DbFactory
 @inject DocumentBroker DocumentBroker
 @rendermode InteractiveServer
 
@@ -57,7 +57,9 @@
         // Let's check DbContext logic: `Expression.Equal(property, tenantId)`. If tenantId is null, it checks for null.
         // Most entities won't have null TenantId.
         // So Admin needs to IgnoreQueryFilters.
-        tenants = await DbContext.Tenants.IgnoreQueryFilters().ToListAsync();
+        // So Admin needs to IgnoreQueryFilters.
+        using var context = DbFactory.CreateDbContext();
+        tenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
     }
 
     private string rawTextToAdd;
@@ -112,7 +114,8 @@
     private async Task AppendToKnowledgeBase(string text)
     {
         var tenantGuid = Guid.Parse(selectedTenantId);
-        var tenant = await DbContext.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
+        using var context = DbFactory.CreateDbContext();
+        var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
         
         if (tenant != null)
         {
@@ -121,7 +124,7 @@
             else
                 tenant.KnowledgeBaseText += "\n\n" + text;
 
-            await DbContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
             showSuccess = true;
         }
     }
