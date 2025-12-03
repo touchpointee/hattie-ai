@@ -11,7 +11,7 @@ namespace HattieAI.Infrastructure.Persistence
 {
     public class HattieDbContext : DbContext
     {
-        private string _currentTenantId;
+        private string _currentTenantId = string.Empty;
         public string CurrentTenantId 
         { 
             get => _currentTenantId; 
@@ -38,10 +38,10 @@ namespace HattieAI.Infrastructure.Persistence
         }
         */
 
-        public DbSet<Tenant> Tenants { get; set; }
-        public DbSet<AppUser> AppUsers { get; set; }
-        public DbSet<ChatSession> ChatSessions { get; set; }
-        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<Tenant> Tenants { get; set; } = null!;
+        public DbSet<AppUser> AppUsers { get; set; } = null!;
+        public DbSet<ChatSession> ChatSessions { get; set; } = null!;
+        public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -58,7 +58,7 @@ namespace HattieAI.Infrastructure.Persistence
                 {
                     var parameter = Expression.Parameter(entityType.ClrType, "e");
                     var property = Expression.Property(parameter, nameof(BaseEntity.TenantId));
-                    var tenantId = Expression.Constant(_currentTenantId);
+                    var tenantId = Expression.Property(Expression.Constant(this), nameof(CurrentTenantId));
                     var filter = Expression.Equal(property, tenantId);
                     var lambda = Expression.Lambda(filter, parameter);
 

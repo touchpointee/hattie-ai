@@ -1,0 +1,12 @@
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\bin\Release\net8.0\HattieAI.Domain.deps.json
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\bin\Release\net8.0\HattieAI.Domain.dll
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\bin\Release\net8.0\HattieAI.Domain.pdb
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\HattieAI.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\HattieAI.Domain.AssemblyInfoInputs.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\HattieAI.Domain.AssemblyInfo.cs
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\HattieAI.Domain.csproj.CoreCompileInputs.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\HattieAI.Domain.sourcelink.json
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\HattieAI.Domain.dll
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\refint\HattieAI.Domain.dll
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\HattieAI.Domain.pdb
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Domain\obj\Release\net8.0\ref\HattieAI.Domain.dll

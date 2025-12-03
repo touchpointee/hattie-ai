@@ -38,31 +38,21 @@
     <div class="alert alert-info">Processing PDF...</div>
 }
 
-@if (showSuccess)
-{
-    <div class="alert alert-success">Knowledge Base updated successfully!</div>
-}
-
 @code {
-    private List<Tenant> tenants = new List<Tenant>();
-    private string selectedTenantId;
-    private bool isProcessing = false;
+    private List<Tenant> tenants = new();
+    private string selectedTenantId = string.Empty;
+    private string rawTextToAdd = string.Empty;
+    private IBrowserFile? uploadedFile;
     private bool showSuccess = false;
+    private bool isProcessing = false;
 
     protected override async Task OnInitializedAsync()
     {
         // We need to fetch all tenants. 
         // If Global Query Filter is active and we are "Admin" (null tenantId), we need to make sure we can see all.
-        // In DbContext, if _currentTenantId is null, the filter might fail or filter everything if we compare to null?
-        // Let's check DbContext logic: `Expression.Equal(property, tenantId)`. If tenantId is null, it checks for null.
-        // Most entities won't have null TenantId.
-        // So Admin needs to IgnoreQueryFilters.
-        // So Admin needs to IgnoreQueryFilters.
         using var context = DbFactory.CreateDbContext();
         tenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
     }
-
-    private string rawTextToAdd;
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {

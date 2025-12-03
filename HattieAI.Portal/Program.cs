@@ -44,8 +44,7 @@ if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("post
     connectionString = builderStr;
 }
 
-    connectionString = builderStr;
-}
+
 
 builder.Services.AddDbContextFactory<HattieDbContext>(options =>
     options.UseNpgsql(connectionString));
