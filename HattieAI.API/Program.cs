@@ -29,8 +29,25 @@ builder.Services.AddHttpClient<GeminiBroker>();
 builder.Services.AddSingleton<DocumentBroker>();
 
 // Database
+// Database
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgres://"))
+{
+    var uri = new Uri(connectionString);
+    var userInfo = uri.UserInfo.Split(':');
+    var builderStr = new Npgsql.NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port,
+        Username = userInfo[0],
+        Password = userInfo[1],
+        Database = uri.AbsolutePath.TrimStart('/')
+    }.ToString();
+    connectionString = builderStr;
+}
+
 builder.Services.AddDbContext<HattieDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // Tenant Provider
 builder.Services.AddHttpContextAccessor();
