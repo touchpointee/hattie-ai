@@ -3,6 +3,7 @@ using HattieAI.Infrastructure.AI;
 using HattieAI.Infrastructure.Documents;
 using HattieAI.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,10 @@ builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseSwagger();
 app.UseSwaggerUI();
 
