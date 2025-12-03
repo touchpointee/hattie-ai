@@ -1,29 +1,22 @@
+import { jsx as _jsx } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
 import ChatWidget from './components/ChatWidget';
-
 function App() {
-    const [tenantId, setTenantId] = useState<string | null>(null);
-
+    const [tenantId, setTenantId] = useState(null);
     useEffect(() => {
         // Get tenantId from URL query params
         const params = new URLSearchParams(window.location.search);
         const tid = params.get('tenantId');
         if (tid) {
             setTenantId(tid);
-        } else {
+        }
+        else {
             console.error("Tenant ID not found in URL");
         }
     }, []);
-
     if (!tenantId) {
         return null; // Don't render anything if no tenantId
     }
-
-    return (
-        <ChatWidget
-            chatbotId={tenantId} // We use chatbotId prop to pass tenantId
-        />
-    );
+    return (_jsx(ChatWidget, { chatbotId: tenantId }));
 }
-
 export default App;

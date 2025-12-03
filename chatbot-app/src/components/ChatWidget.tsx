@@ -3,12 +3,10 @@ import { createPortal } from 'react-dom';
 import ChatInterface from './chat/ChatInterface';
 
 interface ChatWidgetProps {
-    isOpen: boolean;
-    onClose: () => void;
     chatbotId: string;
 }
 
-export default function ChatWidget({ isOpen, onClose, chatbotId }: ChatWidgetProps) {
+export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
     const [isMinimized, setIsMinimized] = useState(true); // Start minimized
     const [mounted, setMounted] = useState(false);
     const [language, setLanguage] = useState<'en' | 'ar'>('en');
