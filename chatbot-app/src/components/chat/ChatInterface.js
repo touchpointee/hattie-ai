@@ -69,10 +69,11 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
                 console.log("Message stream ended.");
             },
             onError: (err) => {
+                console.error("Chat error:", err);
                 setMessages(prev => [...prev, {
                     id: Date.now().toString(),
                     role: 'assistant',
-                    content: `Error: ${err}`
+                    content: "I apologize, but I'm currently unable to process your request due to a temporary service disruption. Please try again later."
                 }]);
                 setLoading(false);
             }

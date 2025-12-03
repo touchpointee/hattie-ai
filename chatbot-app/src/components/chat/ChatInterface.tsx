@@ -36,11 +36,22 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string | null>(null);
+    const [tenantName, setTenantName] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const signalRRef = useRef<SignalRService | null>(null);
     const currentAiMessageRef = useRef<string>("");
 
     useEffect(() => {
+        // Fetch tenant name
+        fetch(`${import.meta.env.VITE_API_URL}/api/tenants/${chatbotId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.name) {
+                    setTenantName(data.name);
+                }
+            })
+            .catch(err => console.error("Failed to fetch tenant name:", err));
+
         const service = new SignalRService(chatbotId, language);
         signalRRef.current = service;
 
@@ -74,10 +85,11 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                 console.log("Message stream ended.");
             },
             onError: (err: string) => {
+                console.error("Chat error:", err);
                 setMessages(prev => [...prev, {
                     id: Date.now().toString(),
                     role: 'assistant',
-                    content: `Error: ${err}`
+                    content: "I apologize, but I'm currently unable to process your request due to a temporary service disruption. Please try again later."
                 }]);
                 setLoading(false);
             }
@@ -86,7 +98,9 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
         service.start();
 
         return () => {
-            // Cleanup connection if needed
+            if (service && typeof service.stop === 'function') {
+                service.stop();
+            }
         };
     }, [chatbotId, language]);
 
@@ -139,7 +153,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                                     src="/hattie.png"
                                     alt="Logo"
                                     style={{
-                                        width: '80px',
+                                        width: '100%',
                                         height: 'auto',
                                         objectFit: 'contain'
                                     }}
@@ -168,7 +182,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                             <div className="welcome-message-content">
                                 <h3 className="welcome-greeting">{t.greeting}</h3>
                                 <p className="welcome-description">
-                                    {t.description}
+                                    {tenantName ? `${tenantName} AI Assistant` : 'AI Assistant'}
                                 </p>
                             </div>
                         </div>
