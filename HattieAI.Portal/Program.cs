@@ -64,11 +64,22 @@ builder.Services.AddScoped<ITenantProvider, AdminTenantProvider>();
 
 var app = builder.Build();
 
+// Apply Migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<HattieDbContext>();
+    dbContext.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+
+var forwardedHeaderOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+};
+forwardedHeaderOptions.KnownNetworks.Clear();
+forwardedHeaderOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeaderOptions);
 
 if (!app.Environment.IsDevelopment())
 {

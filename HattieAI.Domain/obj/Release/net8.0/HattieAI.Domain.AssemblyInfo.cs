@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HattieAI.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e207a1bee802531434dabbf367c4756739ef8387")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+12049380492f691c18d6b8fa68a5bf7fc2bdd96b")]
 [assembly: System.Reflection.AssemblyProductAttribute("HattieAI.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HattieAI.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
