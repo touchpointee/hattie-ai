@@ -549,6 +549,25 @@
     box-shadow: none;
 }
 
+/* Powered By Link */
+#hattie-ai-root .hattie-powered-by {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--hattie-text-secondary);
+}
+
+#hattie-ai-root .hattie-powered-by a {
+    color: var(--hattie-text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+#hattie-ai-root .hattie-powered-by a:hover {
+    color: var(--hattie-text-primary);
+    text-decoration: underline;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 480px) {
     #hattie-ai-root .hattie-widget-popup {

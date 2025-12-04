@@ -251,7 +251,11 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         </svg>
                     </button>
                 </div>
-
+                <div className="hattie-powered-by">
+                    <a href="https://touchpointe.digital/?utm_source=referral&utm_medium=hattie_ai" target="_blank" rel="noopener noreferrer">
+                        Powered by Touchpointe Digital
+                    </a>
+                </div>
             </div>
         </div>
     );
