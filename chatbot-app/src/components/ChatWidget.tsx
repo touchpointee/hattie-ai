@@ -17,6 +17,9 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
 
     if (!mounted) return null;
 
+    const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
+    const logoUrl = import.meta.env.DEV ? '/hattie.png' : `${apiUrl}/hattie.png`;
+
     return (
         <>
             {/* Floating Button */}
@@ -40,7 +43,7 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
                 {/* Header */}
                 <div className="hattie-header">
                     <div className="hattie-logo-center">
-                        <img src="/hattie.png" alt="Hattie AI" />
+                        <img src={logoUrl} alt="Hattie AI" />
                         <span className="hattie-title">Hattie AI</span>
                     </div>
 

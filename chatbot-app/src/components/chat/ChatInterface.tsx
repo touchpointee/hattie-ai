@@ -41,8 +41,10 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
     const signalRRef = useRef<SignalRService | null>(null);
     const currentAiMessageRef = useRef<string>("");
 
+    const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
+    const logoUrl = import.meta.env.DEV ? '/hattie.png' : `${apiUrl}/hattie.png`;
+
     useEffect(() => {
-        const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
         fetch(`${apiUrl}/api/tenants/${chatbotId}`)
             .then(res => res.json())
             .then(data => {
@@ -157,7 +159,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         <div className="hattie-centered-logo">
                             <div className="hattie-logo-circle">
                                 <img
-                                    src="/hattie.png"
+                                    src={logoUrl}
                                     alt="Logo"
                                     style={{
                                         width: '100%',
@@ -177,7 +179,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         <div className="hattie-welcome-message-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                             <div className="hattie-bot-avatar-small">
                                 <img
-                                    src="/hattie.png"
+                                    src={logoUrl}
                                     alt="Bot"
                                     style={{
                                         width: '28px',
@@ -200,7 +202,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                             <div key={index} className={`hattie-chat-message ${msg.role}`}>
                                 {msg.role === 'assistant' && (
                                     <div className="hattie-chat-avatar bot-avatar">
-                                        <img src="/hattie.png" alt="Bot" />
+                                        <img src={logoUrl} alt="Bot" />
                                     </div>
                                 )}
                                 <div className={`hattie-chat-bubble ${msg.role}`}>
@@ -211,7 +213,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         {loading && (
                             <div className="hattie-chat-message assistant">
                                 <div className="hattie-chat-avatar bot-avatar">
-                                    <img src="/hattie.png" alt="Bot" />
+                                    <img src={logoUrl} alt="Bot" />
                                 </div>
                                 <div className="hattie-chat-bubble assistant">
                                     <div className="hattie-typing-indicator">
