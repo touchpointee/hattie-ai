@@ -249,7 +249,8 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         aria-label="Send message"
                     >
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M10 3L10 17M10 3L4 9M10 3L16 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </button>
                 </div>
