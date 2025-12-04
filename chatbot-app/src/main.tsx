@@ -1,10 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import './index.css'
+import './embed.css'
 
 // Auto-create root if it doesn't exist (for embedding)
-let root = document.getElementById('root');
+let root = document.getElementById('hattie-ai-root');
 if (!root) {
     root = document.createElement('div');
     root.id = 'hattie-ai-root';

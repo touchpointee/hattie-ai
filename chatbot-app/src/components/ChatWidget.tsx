@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+
 import ChatInterface from './chat/ChatInterface';
 
 interface ChatWidgetProps {
@@ -17,17 +17,17 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
 
     if (!mounted) return null;
 
-    return createPortal(
+    return (
         <>
             {/* Floating Button */}
             {!isOpen && (
                 <button
-                    className="chatbot-floating-btn"
+                    className="hattie-floating-btn"
                     onClick={() => setIsOpen(true)}
                     aria-label="Open Chat"
                 >
-                    <span className="chatbot-btn-text">Ask Hattie</span>
-                    <div className="chatbot-btn-icon">
+                    <span className="hattie-btn-text">Ask Hattie</span>
+                    <div className="hattie-btn-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="currentColor" />
                         </svg>
@@ -36,19 +36,18 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
             )}
 
             {/* Chat Window */}
-            {/* Chat Window */}
-            <div className="chatbot-widget-popup open" style={{ display: isOpen ? 'flex' : 'none' }}>
+            <div className="hattie-widget-popup open" style={{ display: isOpen ? 'flex' : 'none' }}>
                 {/* Header */}
-                <div className="chatbot-header">
-                    <div className="chatbot-logo-center">
-                        <img src="https://hattieai.touchpointe.digital/hattie.png" alt="Hattie AI" />
-                        <span className="chatbot-title">Hattie AI</span>
+                <div className="hattie-header">
+                    <div className="hattie-logo-center">
+                        <img src="/hattie.png" alt="Hattie AI" />
+                        <span className="hattie-title">Hattie AI</span>
                     </div>
 
-                    <div className="chatbot-header-controls">
+                    <div className="hattie-header-controls">
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="chatbot-control-btn"
+                            className="hattie-control-btn"
                             aria-label="Minimize"
                         >
                             —
@@ -57,15 +56,15 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
                 </div>
 
                 {/* Language Selector */}
-                <div className="language-selector">
+                <div className="hattie-language-selector">
                     <button
-                        className={`lang-btn ${language === 'en' ? 'active' : ''}`}
+                        className={`hattie-lang-btn ${language === 'en' ? 'active' : ''}`}
                         onClick={() => setLanguage('en')}
                     >
                         English
                     </button>
                     <button
-                        className={`lang-btn ${language === 'ar' ? 'active' : ''}`}
+                        className={`hattie-lang-btn ${language === 'ar' ? 'active' : ''}`}
                         onClick={() => setLanguage('ar')}
                     >
                         العربية
@@ -77,7 +76,6 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
                     <ChatInterface chatbotId={chatbotId} language={language} />
                 </div>
             </div>
-        </>,
-        document.body
+        </>
     );
 }

@@ -148,16 +148,16 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
     }
 
     return (
-        <div className="modal-chat-container">
+        <div className="hattie-chat-container">
             {/* Messages */}
-            <div className="modal-messages-container">
+            <div className="hattie-messages-container">
                 {messages.length === 0 ? (
-                    <div className="modal-welcome-screen">
+                    <div className="hattie-welcome-screen">
                         {/* Centered Logo */}
-                        <div className="centered-logo">
-                            <div className="logo-circle">
+                        <div className="hattie-centered-logo">
+                            <div className="hattie-logo-circle">
                                 <img
-                                    src="https://hattieai.touchpointe.digital/hattie.png"
+                                    src="/hattie.png"
                                     alt="Logo"
                                     style={{
                                         width: '100%',
@@ -169,15 +169,15 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         </div>
 
                         {/* Today Divider */}
-                        <div className="today-divider">
+                        <div className="hattie-today-divider">
                             <span>{t.today}</span>
                         </div>
 
                         {/* Welcome Message */}
-                        <div className="welcome-message-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                            <div className="bot-avatar-small">
+                        <div className="hattie-welcome-message-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                            <div className="hattie-bot-avatar-small">
                                 <img
-                                    src="https://hattieai.touchpointe.digital/hattie.png"
+                                    src="/hattie.png"
                                     alt="Bot"
                                     style={{
                                         width: '28px',
@@ -186,9 +186,9 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                                     }}
                                 />
                             </div>
-                            <div className="welcome-message-content">
-                                <h3 className="welcome-greeting">{t.greeting}</h3>
-                                <p className="welcome-description">
+                            <div className="hattie-welcome-content">
+                                <h3 className="hattie-welcome-greeting">{t.greeting}</h3>
+                                <p className="hattie-welcome-description">
                                     {tenantName ? `${tenantName} AI Assistant` : 'AI Assistant'}
                                 </p>
                             </div>
@@ -197,27 +197,27 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                 ) : (
                     <>
                         {messages.map((msg, index) => (
-                            <div key={index} className={`chat-message ${msg.role}`}>
+                            <div key={index} className={`hattie-chat-message ${msg.role}`}>
                                 {msg.role === 'assistant' && (
-                                    <div className="chat-avatar bot-avatar">
-                                        <img src="https://hattieai.touchpointe.digital/hattie.png" alt="Bot" />
+                                    <div className="hattie-chat-avatar bot-avatar">
+                                        <img src="/hattie.png" alt="Bot" />
                                     </div>
                                 )}
-                                <div className={`chat-bubble ${msg.role}`}>
+                                <div className={`hattie-chat-bubble ${msg.role}`}>
                                     {msg.content}
                                 </div>
                             </div>
                         ))}
                         {loading && (
-                            <div className="chat-message assistant">
-                                <div className="chat-avatar bot-avatar">
-                                    <img src="https://hattieai.touchpointe.digital/hattie.png" alt="Bot" />
+                            <div className="hattie-chat-message assistant">
+                                <div className="hattie-chat-avatar bot-avatar">
+                                    <img src="/hattie.png" alt="Bot" />
                                 </div>
-                                <div className="chat-bubble assistant">
-                                    <div className="typing-indicator">
-                                        <div className="typing-dot"></div>
-                                        <div className="typing-dot"></div>
-                                        <div className="typing-dot"></div>
+                                <div className="hattie-chat-bubble assistant">
+                                    <div className="hattie-typing-indicator">
+                                        <div className="hattie-typing-dot"></div>
+                                        <div className="hattie-typing-dot"></div>
+                                        <div className="hattie-typing-dot"></div>
                                     </div>
                                 </div>
                             </div>
@@ -228,11 +228,11 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
             </div>
 
             {/* Input */}
-            <div className="modal-input-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                <div className="modal-input-wrapper">
+            <div className="hattie-input-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                <div className="hattie-input-wrapper">
                     <input
                         type="text"
-                        className="modal-message-input"
+                        className="hattie-message-input"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -241,7 +241,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
                     />
                     <button
-                        className="modal-send-button"
+                        className="hattie-send-button"
                         onClick={handleSend}
                         disabled={!input.trim() || loading}
                         aria-label="Send message"

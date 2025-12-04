@@ -1,0 +1,562 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* Scoped Variables */
+#hattie-ai-root {
+    /* Color Palette - Modern Sleek Monochrome Theme */
+    --hattie-bg-primary: #050505;
+    --hattie-bg-secondary: #0a0a0a;
+    --hattie-bg-tertiary: #121212;
+    --hattie-bg-glass: rgba(10, 10, 10, 0.6);
+
+    --hattie-accent-primary: #ffffff;
+    /* White */
+    --hattie-accent-secondary: #e2e8f0;
+    /* Silver */
+    --hattie-accent-gradient: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+    --hattie-accent-glow: 0 0 20px rgba(255, 255, 255, 0.15);
+    /* Subtle white glow */
+
+    --hattie-text-primary: #ffffff;
+    --hattie-text-secondary: #a1a1aa;
+    --hattie-text-tertiary: #52525b;
+
+    --hattie-border: rgba(255, 255, 255, 0.12);
+    --hattie-border-hover: rgba(255, 255, 255, 0.25);
+
+    --hattie-success: #10b981;
+    --hattie-error: #ef4444;
+    --hattie-warning: #f59e0b;
+
+    /* Spacing */
+    --hattie-spacing-xs: 0.5rem;
+    --hattie-spacing-sm: 0.75rem;
+    --hattie-spacing-md: 1rem;
+    --hattie-spacing-lg: 1.5rem;
+    --hattie-spacing-xl: 2rem;
+    --hattie-spacing-2xl: 3rem;
+
+    /* Border Radius */
+    --hattie-radius-sm: 0.5rem;
+    --hattie-radius-md: 0.75rem;
+    --hattie-radius-lg: 1rem;
+    --hattie-radius-xl: 1.5rem;
+    --hattie-radius-2xl: 1.5rem;
+    --hattie-radius-full: 9999px;
+
+    /* Shadows */
+    --hattie-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --hattie-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --hattie-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --hattie-shadow-2xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+
+    /* Transitions */
+    --hattie-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --hattie-transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --hattie-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Typography */
+    --hattie-font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --hattie-font-size-xs: 0.75rem;
+    --hattie-font-size-sm: 0.875rem;
+    --hattie-font-size-base: 1rem;
+    --hattie-font-size-lg: 1.125rem;
+    --hattie-font-size-xl: 1.25rem;
+    --hattie-font-size-2xl: 1.5rem;
+    --hattie-font-size-3xl: 2rem;
+
+    /* Reset for container */
+    font-family: var(--hattie-font-family);
+    line-height: 1.6;
+    color: var(--hattie-text-primary);
+    text-align: left;
+}
+
+/* Scoped Reset */
+#hattie-ai-root * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Floating Button */
+#hattie-ai-root .hattie-floating-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: auto;
+    height: auto;
+    padding: 10px 16px;
+    /* Adjusted padding */
+    border-radius: 50px;
+    background: #1e293b;
+    /* Dark background */
+    border: 1px solid var(--hattie-border);
+    box-shadow: var(--hattie-shadow-lg), var(--hattie-accent-glow);
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: visible;
+}
+
+#hattie-ai-root .hattie-floating-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--hattie-shadow-2xl), 0 0 30px rgba(255, 255, 255, 0.3);
+    border-color: var(--hattie-accent-primary);
+}
+
+#hattie-ai-root .hattie-btn-text {
+    color: #ffffff;
+    /* White text */
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+}
+
+#hattie-ai-root .hattie-btn-icon {
+    width: 32px;
+    height: 32px;
+    background: #ffffff;
+    /* White icon bg */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1e293b;
+    /* Dark icon */
+    flex-shrink: 0;
+}
+
+#hattie-ai-root .hattie-btn-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Chat Popup */
+#hattie-ai-root .hattie-widget-popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 380px;
+    height: 800px;
+    max-height: calc(100vh - 40px);
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--hattie-border);
+    border-radius: var(--hattie-radius-2xl);
+    box-shadow: var(--hattie-shadow-2xl);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: hattieSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes hattieSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Header */
+#hattie-ai-root .hattie-header {
+    padding: 0 24px;
+    background: transparent;
+    border-bottom: 1px solid var(--hattie-border);
+    display: flex;
+    justify-content: center;
+    /* Center logo */
+    align-items: center;
+    height: 60px;
+    position: relative;
+    /* For absolute controls */
+}
+
+#hattie-ai-root .hattie-header-controls {
+    position: absolute;
+    left: 24px;
+    display: flex;
+    align-items: center;
+}
+
+#hattie-ai-root .hattie-logo-center {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    /* Increased gap */
+}
+
+#hattie-ai-root .hattie-logo-center img {
+    width: 48px;
+    height: 48px;
+    border-radius: 0;
+    /* Remove circle */
+    border: none;
+    /* Remove border */
+    padding: 0;
+    /* Remove padding */
+    background: transparent;
+    /* Remove background */
+    object-fit: contain;
+}
+
+#hattie-ai-root .hattie-title {
+    font-weight: 600;
+    font-size: 18px;
+    /* Slightly larger text */
+    color: var(--hattie-text-primary);
+    background: none;
+    -webkit-text-fill-color: initial;
+    height: 21px;
+}
+
+#hattie-ai-root .hattie-control-btn {
+    background: none;
+    border: none;
+    color: var(--hattie-text-secondary);
+    cursor: pointer;
+    font-size: 1.25rem;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#hattie-ai-root .hattie-control-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Language Selector */
+#hattie-ai-root .hattie-language-selector {
+    display: flex;
+    padding: 8px var(--hattie-spacing-lg);
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--hattie-border);
+}
+
+#hattie-ai-root .hattie-lang-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--hattie-text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+#hattie-ai-root .hattie-lang-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+#hattie-ai-root .hattie-lang-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--hattie-text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Chat Interface */
+#hattie-ai-root .hattie-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: transparent;
+}
+
+#hattie-ai-root .hattie-messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--hattie-spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--hattie-spacing-md);
+    scrollbar-width: thin;
+    scrollbar-color: var(--hattie-bg-tertiary) transparent;
+}
+
+/* Welcome Screen */
+#hattie-ai-root .hattie-welcome-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--hattie-spacing-xl);
+    text-align: center;
+}
+
+#hattie-ai-root .hattie-logo-circle {
+    width: 90px;
+    height: 90px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin-bottom: var(--hattie-spacing-xl);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+#hattie-ai-root .hattie-today-divider {
+    margin: var(--hattie-spacing-lg) 0;
+    color: var(--hattie-text-tertiary);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: var(--hattie-spacing-md);
+    width: 100%;
+}
+
+#hattie-ai-root .hattie-today-divider::before,
+#hattie-ai-root .hattie-today-divider::after {
+    content: '';
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--hattie-border), transparent);
+    flex: 1;
+}
+
+#hattie-ai-root .hattie-welcome-message-container {
+    display: flex;
+    gap: var(--hattie-spacing-md);
+    align-items: flex-start;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.03);
+    padding: var(--hattie-spacing-lg);
+    border-radius: var(--hattie-radius-xl);
+    border: 1px solid var(--hattie-border);
+    backdrop-filter: blur(10px);
+}
+
+#hattie-ai-root .hattie-bot-avatar-small {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid var(--hattie-border);
+}
+
+#hattie-ai-root .hattie-welcome-content {
+    flex: 1;
+}
+
+#hattie-ai-root .hattie-welcome-greeting {
+    font-size: var(--hattie-font-size-base);
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--hattie-text-primary);
+}
+
+#hattie-ai-root .hattie-welcome-description {
+    font-size: 14px;
+    color: var(--hattie-text-secondary);
+    line-height: 1.5;
+}
+
+/* Messages */
+#hattie-ai-root .hattie-chat-message {
+    display: flex;
+    gap: 12px;
+    animation: hattieSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes hattieSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#hattie-ai-root .hattie-chat-message.user {
+    flex-direction: row-reverse;
+}
+
+#hattie-ai-root .hattie-chat-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+#hattie-ai-root .hattie-chat-avatar.bot-avatar {
+    background: var(--hattie-bg-tertiary);
+    border: 1px solid var(--hattie-border);
+}
+
+/* FIX: Ensure chat avatar image is fully visible */
+#hattie-ai-root .hattie-chat-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
+}
+
+#hattie-ai-root .hattie-chat-bubble {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#hattie-ai-root .hattie-chat-bubble.user {
+    background: var(--hattie-accent-gradient);
+    color: #000000;
+    /* Black text on white bubble */
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+    font-weight: 500;
+}
+
+#hattie-ai-root .hattie-chat-bubble.assistant {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--hattie-border);
+    color: var(--hattie-text-primary);
+    border-bottom-left-radius: 4px;
+}
+
+/* Typing Indicator */
+#hattie-ai-root .hattie-typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+#hattie-ai-root .hattie-typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--hattie-text-secondary);
+    animation: hattieTyping 1.4s infinite ease-in-out;
+}
+
+#hattie-ai-root .hattie-typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+#hattie-ai-root .hattie-typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes hattieTyping {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    50% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+/* Input Area */
+#hattie-ai-root .hattie-input-container {
+    padding: var(--hattie-spacing-md);
+    background: transparent;
+    border-top: none;
+}
+
+#hattie-ai-root .hattie-input-wrapper {
+    display: flex;
+    gap: 8px;
+    background: var(--hattie-bg-tertiary);
+    padding: 6px;
+    border-radius: 50px;
+    border: 1px solid var(--hattie-border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    align-items: center;
+}
+
+#hattie-ai-root .hattie-message-input {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: var(--hattie-text-primary);
+    font-size: 15px;
+    outline: none;
+}
+
+#hattie-ai-root .hattie-message-input::placeholder {
+    color: var(--hattie-text-tertiary);
+}
+
+#hattie-ai-root .hattie-send-button {
+    background: var(--hattie-accent-gradient);
+    color: #000000;
+    /* Black icon */
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+}
+
+#hattie-ai-root .hattie-send-button:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+}
+
+#hattie-ai-root .hattie-send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--hattie-bg-tertiary);
+    color: var(--hattie-text-tertiary);
+    box-shadow: none;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+    #hattie-ai-root .hattie-widget-popup {
+        width: calc(100% - 32px);
+        height: 700px;
+        max-height: calc(100vh - 80px);
+        bottom: 20px;
+        right: 16px;
+        border-radius: var(--hattie-radius-xl);
+    }
+}
