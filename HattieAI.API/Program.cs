@@ -56,17 +56,19 @@ builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-// Enable CORS - Must be before UseHttpsRedirection and UseAuthorization
-app.UseCors("AllowAll");
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
+
+// Enable CORS - Must be before UseHttpsRedirection and UseAuthorization
+app.UseCors("AllowAll");
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.Use(async (context, next) =>
 {
