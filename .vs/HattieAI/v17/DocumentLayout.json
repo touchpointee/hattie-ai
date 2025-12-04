@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{0BB4E4D2-F605-47AE-AFD1-5EA563EC6997}|HattieAI.Portal\\HattieAI.Portal.csproj|c:\\users\\ajmal\\desktop\\kravino innovations\\touchpointe\\hattie_ai\\hattieai.portal\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{0BB4E4D2-F605-47AE-AFD1-5EA563EC6997}|HattieAI.Portal\\HattieAI.Portal.csproj|solutionrelative:hattieai.portal\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{F64D953C-47EC-4D0D-8CFA-AB0AB9947EBB}|HattieAI.Infrastructure\\HattieAI.Infrastructure.csproj|c:\\users\\ajmal\\desktop\\kravino innovations\\touchpointe\\hattie_ai\\hattieai.infrastructure\\ai\\geminibroker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{F64D953C-47EC-4D0D-8CFA-AB0AB9947EBB}|HattieAI.Infrastructure\\HattieAI.Infrastructure.csproj|solutionrelative:hattieai.infrastructure\\ai\\geminibroker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -34,16 +38,16 @@
       "RelativeMoniker": "D:0:0:{F64D953C-47EC-4D0D-8CFA-AB0AB9947EBB}|HattieAI.Infrastructure\\HattieAI.Infrastructure.csproj|solutionrelative:hattieai.infrastructure\\hattieai.infrastructure.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{8BA90661-8460-472E-9CC2-DC1EE5AC7849}|HattieAI.Portal\\HattieAI.Portal.csproj|c:\\users\\ajmal\\desktop\\kravino innovations\\touchpointe\\hattie_ai\\hattieai.portal\\hattieai.portal.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
-      "RelativeMoniker": "D:0:0:{8BA90661-8460-472E-9CC2-DC1EE5AC7849}|HattieAI.Portal\\HattieAI.Portal.csproj|solutionrelative:hattieai.portal\\hattieai.portal.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{F7AC2667-9C06-4EEA-86EF-4208B5579A29}|HattieAI.API\\HattieAI.API.csproj|c:\\users\\ajmal\\desktop\\kravino innovations\\touchpointe\\hattie_ai\\hattieai.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{F7AC2667-9C06-4EEA-86EF-4208B5579A29}|HattieAI.API\\HattieAI.API.csproj|solutionrelative:hattieai.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{8BA90661-8460-472E-9CC2-DC1EE5AC7849}|HattieAI.Portal\\HattieAI.Portal.csproj|c:\\users\\ajmal\\desktop\\kravino innovations\\touchpointe\\hattie_ai\\hattieai.portal\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{8BA90661-8460-472E-9CC2-DC1EE5AC7849}|HattieAI.Portal\\HattieAI.Portal.csproj|solutionrelative:hattieai.portal\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{0BB4E4D2-F605-47AE-AFD1-5EA563EC6997}|HattieAI.Portal\\HattieAI.Portal.csproj|c:\\users\\ajmal\\desktop\\kravino innovations\\touchpointe\\hattie_ai\\hattieai.portal\\hattieai.portal.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{0BB4E4D2-F605-47AE-AFD1-5EA563EC6997}|HattieAI.Portal\\HattieAI.Portal.csproj|solutionrelative:hattieai.portal\\hattieai.portal.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0BB4E4D2-F605-47AE-AFD1-5EA563EC6997}|HattieAI.Portal\\HattieAI.Portal.csproj|c:\\users\\ajmal\\desktop\\kravino innovations\\touchpointe\\hattie_ai\\hattieai.portal\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{0BB4E4D2-F605-47AE-AFD1-5EA563EC6997}|HattieAI.Portal\\HattieAI.Portal.csproj|solutionrelative:hattieai.portal\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -53,7 +57,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -61,7 +65,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
+              "Title": "Home.razor",
+              "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Portal\\Components\\Pages\\Home.razor",
+              "RelativeDocumentMoniker": "HattieAI.Portal\\Components\\Pages\\Home.razor",
+              "ToolTip": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Portal\\Components\\Pages\\Home.razor",
+              "RelativeToolTip": "HattieAI.Portal\\Components\\Pages\\Home.razor",
+              "ViewState": "AgIAAOwAAAAAAAAAAAAEwP4AAAALAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-12-04T11:48:50.141Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "HattieAI.Domain.csproj",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Domain\\HattieAI.Domain.csproj",
               "RelativeDocumentMoniker": "HattieAI.Domain\\HattieAI.Domain.csproj",
@@ -73,7 +90,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Microsoft.Common.CurrentVersion.targets",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
@@ -85,7 +102,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "HattieDbContextModelSnapshot.cs",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Infrastructure\\Migrations\\HattieDbContextModelSnapshot.cs",
               "RelativeDocumentMoniker": "HattieAI.Infrastructure\\Migrations\\HattieDbContextModelSnapshot.cs",
@@ -97,7 +114,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "20251201142415_InitialCreate.cs",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Infrastructure\\Migrations\\20251201142415_InitialCreate.cs",
               "RelativeDocumentMoniker": "HattieAI.Infrastructure\\Migrations\\20251201142415_InitialCreate.cs",
@@ -109,7 +126,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "DocumentBroker.cs",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Infrastructure\\Documents\\DocumentBroker.cs",
               "RelativeDocumentMoniker": "HattieAI.Infrastructure\\Documents\\DocumentBroker.cs",
@@ -121,20 +138,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "GeminiBroker.cs",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Infrastructure\\AI\\GeminiBroker.cs",
               "RelativeDocumentMoniker": "HattieAI.Infrastructure\\AI\\GeminiBroker.cs",
               "ToolTip": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Infrastructure\\AI\\GeminiBroker.cs",
               "RelativeToolTip": "HattieAI.Infrastructure\\AI\\GeminiBroker.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAxwA4AAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAQwBEAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-01T14:25:07.305Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "HattieAI.API.csproj",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.API\\HattieAI.API.csproj",
               "RelativeDocumentMoniker": "HattieAI.API\\HattieAI.API.csproj",
@@ -146,7 +163,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "HattieAI.Infrastructure.csproj",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Infrastructure\\HattieAI.Infrastructure.csproj",
               "RelativeDocumentMoniker": "HattieAI.Infrastructure\\HattieAI.Infrastructure.csproj",
@@ -158,7 +175,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "HattieAI.Portal",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Portal\\HattieAI.Portal.csproj",
               "RelativeDocumentMoniker": "HattieAI.Portal\\HattieAI.Portal.csproj",
@@ -169,7 +186,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 11,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\ajmal\\Desktop\\kravino Innovations\\touchpointe\\Hattie_AI\\HattieAI.Portal\\appsettings.json",
               "RelativeDocumentMoniker": "HattieAI.Portal\\appsettings.json",

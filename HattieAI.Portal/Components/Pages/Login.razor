@@ -1,33 +1,109 @@
 @page "/login"
 @using HattieAI.Portal.Auth
+@using HattieAI.Portal.Components.Layout
+@layout LoginLayout
 @inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager NavManager
 @rendermode InteractiveServer
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h3>Hattie AI Admin</h3>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label>Username</label>
-                    <input class="form-control" @bind="username" placeholder="admin" />
-                </div>
-                <div class="mb-3">
-                    <label>Password</label>
-                    <input type="password" class="form-control" @bind="password" placeholder="admin" />
-                </div>
-                @if (!string.IsNullOrEmpty(errorMessage))
-                {
-                    <div class="alert alert-danger">@errorMessage</div>
-                }
-                <button class="btn btn-primary w-100" @onclick="Authenticate">Login</button>
-            </div>
+<div class="login-container">
+    <div class="login-header">
+        <div class="logo-circle">
+            <span class="logo-text">H</span>
         </div>
+        <h2>Welcome Back</h2>
+        <p class="text-muted">Sign in to access your dashboard</p>
+    </div>
+
+    <div class="login-form">
+        <div class="form-group">
+            <label>Username</label>
+            <input class="form-control" @bind="username" placeholder="Enter your username" />
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" class="form-control" @bind="password" placeholder="Enter your password" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-circle-fill me-2"></i> @errorMessage
+            </div>
+        }
+
+        <button class="btn btn-primary w-100" @onclick="Authenticate">
+            <span>Sign In</span>
+        </button>
+    </div>
+    
+    <div class="login-footer">
+        <p>Powered by <strong>Hattie AI</strong></p>
     </div>
 </div>
+
+<style>
+    .login-container {
+        background: var(--surface-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        width: 100%;
+        border: 1px solid var(--border-color);
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .logo-circle {
+        width: 64px;
+        height: 64px;
+        background: var(--primary-gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        box-shadow: var(--shadow-md);
+    }
+
+    .logo-text {
+        color: white;
+        font-size: 2rem;
+        font-weight: 800;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .login-footer {
+        margin-top: 2rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    .alert {
+        padding: 0.75rem 1rem;
+        border-radius: var(--border-radius);
+        background-color: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: var(--danger-color);
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+    }
+</style>
 
 @code {
     private string username;
@@ -36,16 +112,16 @@
 
     private async Task Authenticate()
     {
-        // Hardcoded for simplicity as requested ("idiot" tone implies speed)
+        // Hardcoded for simplicity as requested
         if (username == "admin" && password == "admin")
         {
             var userSession = new UserSession { UserName = username, Role = "Admin" };
             await AuthStateProvider.UpdateAuthenticationState(userSession);
-            NavManager.NavigateTo("/", true);
+            NavManager.NavigateTo("/");
         }
         else
         {
-            errorMessage = "Invalid credentials (try admin/admin)";
+            errorMessage = "Invalid credentials. Please try again.";
         }
     }
 }

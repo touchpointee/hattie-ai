@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+
+<div class="login-layout">
+    <main class="login-content">
+        @Body
+    </main>
+</div>
+
+<style>
+    .login-layout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: var(--bg-gradient);
+        font-family: 'Inter', sans-serif;
+    }
+
+    .login-content {
+        width: 100%;
+        max-width: 450px;
+        padding: 2rem;
+    }
+</style>

@@ -7,51 +7,322 @@
 @attribute [Authorize]
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @inject DocumentBroker DocumentBroker
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
-<h3>Knowledge Base Management</h3>
+<PageTitle>Knowledge Base | Hattie AI</PageTitle>
 
-<div class="mb-3">
-    <label class="form-label">Select Client</label>
-    <select class="form-select" @bind="selectedTenantId">
-        <option value="">-- Select Client --</option>
-        @foreach (var tenant in tenants)
+<div class="page-header">
+    <h1>Knowledge Base</h1>
+    <p class="text-muted">Manage and view knowledge sources for your AI clients.</p>
+</div>
+
+<div class="content-grid">
+    <!-- Selection & Upload Column -->
+    <div class="left-column">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3><i class="bi bi-person-badge me-2"></i> Select Client</h3>
+            </div>
+            <div class="card-body">
+                <select class="form-select form-select-lg" @bind="selectedTenantId" @bind:after="OnTenantSelected">
+                    <option value="">-- Choose a Client --</option>
+                    @foreach (var tenant in tenants)
+                    {
+                        <option value="@tenant.Id">@tenant.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(selectedTenantId))
         {
-            <option value="@tenant.Id">@tenant.Name</option>
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="bi bi-cloud-upload me-2"></i> Add Knowledge</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <label class="form-label">Upload PDF Document</label>
+                        <div class="upload-box">
+                            <InputFile OnChange="HandleFileSelected" class="file-input" accept=".pdf" />
+                            <div class="upload-content">
+                                <i class="bi bi-file-earmark-pdf upload-icon"></i>
+                                <span>Click or drag PDF here</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Or Add Raw Text</label>
+                        <textarea class="form-control" rows="5" @bind="rawTextToAdd" placeholder="Paste text content here..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary w-100" @onclick="AppendText" disabled="@(string.IsNullOrWhiteSpace(rawTextToAdd) || isProcessing)">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>Processing...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-plus-lg me-2"></i> <span>Append to Knowledge Base</span>
+                        }
+                    </button>
+
+                    @if (showSuccess)
+                    {
+                        <div class="alert alert-success mt-3">
+                            <i class="bi bi-check-circle-fill me-2"></i> Knowledge updated successfully!
+                        </div>
+                    }
+                </div>
+            </div>
         }
-    </select>
+    </div>
+
+    <!-- View & Edit Knowledge Column -->
+    <div class="right-column">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <h3><i class="bi bi-book-half me-2"></i> Current Knowledge</h3>
+                    @if (isEditing)
+                    {
+                        <span class="badge bg-warning text-dark">Editing Mode</span>
+                    }
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    @if (!string.IsNullOrEmpty(currentKnowledge))
+                    {
+                        <span class="badge bg-primary">@currentKnowledge.Length chars</span>
+                        
+                        @if (isEditing)
+                        {
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-success" @onclick="SaveKnowledgeBase">
+                                    <i class="bi bi-check-lg me-1"></i> Save
+                                </button>
+                                <button class="btn btn-outline-secondary" @onclick="CancelEdit">
+                                    <i class="bi bi-x-lg me-1"></i> Cancel
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-outline-primary" @onclick="EnableEdit">
+                                <i class="bi bi-pencil me-1"></i> Edit
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+            <div class="card-body p-0">
+                @if (string.IsNullOrEmpty(selectedTenantId))
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-arrow-left-circle"></i>
+                        <p>Select a client to view their knowledge base.</p>
+                    </div>
+                }
+                else if (string.IsNullOrEmpty(currentKnowledge) && !isEditing)
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-journal-x"></i>
+                        <p>No knowledge base data found for this client.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="knowledge-viewer-container">
+                        @if (isEditing)
+                        {
+                            <textarea class="knowledge-editor" @bind="currentKnowledge" @bind:event="oninput"></textarea>
+                        }
+                        else
+                        {
+                            <div class="knowledge-viewer">
+                                <pre>@currentKnowledge</pre>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="mb-3">
-    <label class="form-label">Upload PDF Knowledge Base</label>
-    <InputFile OnChange="HandleFileSelected" />
-</div>
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
 
-<div class="mb-3">
-    <label class="form-label">Or Add Raw Text</label>
-    <textarea class="form-control mb-2" rows="5" @bind="rawTextToAdd" placeholder="Enter text to append to knowledge base..."></textarea>
-    <button class="btn btn-primary" @onclick="AppendText" disabled="@(string.IsNullOrWhiteSpace(rawTextToAdd) || string.IsNullOrEmpty(selectedTenantId))">Append Text</button>
-</div>
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 2rem;
+        align-items: start;
+    }
 
-@if (isProcessing)
-{
-    <div class="alert alert-info">Processing PDF...</div>
-}
+    @@media (max-width: 992px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .upload-box {
+        position: relative;
+        border: 2px dashed var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.2s;
+        background: rgba(0, 0, 0, 0.02);
+        cursor: pointer;
+    }
+
+    .upload-box:hover {
+        border-color: var(--primary-color);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .file-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .upload-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: none;
+    }
+
+    .upload-icon {
+        font-size: 2rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .knowledge-viewer-container {
+        height: 600px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .knowledge-viewer, .knowledge-editor {
+        background-color: #1e1e1e; /* Dark editor-like background */
+        color: #d4d4d4;
+        padding: 1.5rem;
+        flex: 1;
+        overflow-y: auto;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        border: none;
+        resize: none;
+        width: 100%;
+    }
+
+    .knowledge-viewer pre {
+        white-space: pre-wrap;
+        margin: 0;
+    }
+
+    .knowledge-editor:focus {
+        outline: none;
+        background-color: #252526;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 400px;
+        color: var(--text-muted);
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
 
 @code {
     private List<Tenant> tenants = new();
     private string selectedTenantId = string.Empty;
     private string rawTextToAdd = string.Empty;
-    private IBrowserFile? uploadedFile;
+    private string currentKnowledge = string.Empty;
+    private string originalKnowledge = string.Empty; // For cancel functionality
     private bool showSuccess = false;
     private bool isProcessing = false;
+    private bool isEditing = false;
 
     protected override async Task OnInitializedAsync()
     {
-        // We need to fetch all tenants. 
-        // If Global Query Filter is active and we are "Admin" (null tenantId), we need to make sure we can see all.
         using var context = DbFactory.CreateDbContext();
-        tenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
+        tenants = await context.Tenants.IgnoreQueryFilters().OrderBy(t => t.Name).ToListAsync();
+    }
+
+    private async Task OnTenantSelected()
+    {
+        showSuccess = false;
+        rawTextToAdd = "";
+        isEditing = false;
+        await LoadCurrentKnowledge();
+    }
+
+    private async Task LoadCurrentKnowledge()
+    {
+        if (string.IsNullOrEmpty(selectedTenantId))
+        {
+            currentKnowledge = string.Empty;
+            return;
+        }
+
+        var tenantGuid = Guid.Parse(selectedTenantId);
+        using var context = DbFactory.CreateDbContext();
+        var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
+        currentKnowledge = tenant?.KnowledgeBaseText ?? string.Empty;
+    }
+
+    private void EnableEdit()
+    {
+        originalKnowledge = currentKnowledge;
+        isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        currentKnowledge = originalKnowledge;
+        isEditing = false;
+    }
+
+    private async Task SaveKnowledgeBase()
+    {
+        if (string.IsNullOrEmpty(selectedTenantId)) return;
+
+        var tenantGuid = Guid.Parse(selectedTenantId);
+        using var context = DbFactory.CreateDbContext();
+        var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
+
+        if (tenant != null)
+        {
+            tenant.KnowledgeBaseText = currentKnowledge;
+            await context.SaveChangesAsync();
+            
+            showSuccess = true;
+            isEditing = false;
+        }
     }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
@@ -115,6 +386,12 @@
                 tenant.KnowledgeBaseText += "\n\n" + text;
 
             await context.SaveChangesAsync();
+            
+            // Refresh the view
+            currentKnowledge = tenant.KnowledgeBaseText;
+            // If we were editing, update original too so cancel doesn't revert the append
+            if (isEditing) originalKnowledge = currentKnowledge;
+            
             showSuccess = true;
         }
     }

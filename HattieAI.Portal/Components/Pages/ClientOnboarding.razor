@@ -8,61 +8,190 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<h3>Client Management</h3>
+<PageTitle>Clients | Hattie AI</PageTitle>
 
-<EditForm Model="@newTenant" OnValidSubmit="HandleValidSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<div class="page-header">
+    <h1>Client Management</h1>
+    <p class="text-muted">Onboard new clients and manage existing integrations.</p>
+</div>
 
-    <div class="mb-3">
-        <label class="form-label">Client Name</label>
-        <InputText class="form-control" @bind-Value="newTenant.Name" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">System Instruction</label>
-        <InputTextArea class="form-control" @bind-Value="newTenant.SystemInstruction" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Create Client</button>
-</EditForm>
-
-@if (showSuccess)
-{
-    <div class="alert alert-success mt-3">Client created successfully!</div>
-}
-
-<hr />
-
-<h3>Existing Clients</h3>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Integration Link</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var tenant in tenants)
-        {
-            <tr>
-                <td>@tenant.Name</td>
-                <td>
-                    <div class="input-group">
-                        <input type="text" class="form-control" value="http://localhost:5173/?tenantId=@tenant.Id" readonly />
-                        <button class="btn btn-outline-secondary" @onclick="() => CopyToClipboard(tenant.Id)">Copy</button>
+<div class="content-grid">
+    <!-- Create Client Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3>
+                <i class="@(isEditing ? "bi bi-pencil-square" : "bi bi-person-plus-fill") me-2"></i> 
+                @(isEditing ? "Edit Client" : "Onboard New Client")
+            </h3>
+        </div>
+        <div class="card-body">
+            <EditForm Model="@newTenant" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
                     </div>
-                </td>
-            </tr>
+                }
+
+                <div class="form-group mb-3">
+                    <label class="form-label">Client Name</label>
+                    <InputText class="form-control" @bind-Value="newTenant.Name" placeholder="e.g. Acme Corp" />
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label">System Instruction</label>
+                    <InputTextArea class="form-control" @bind-Value="newTenant.SystemInstruction" rows="4" placeholder="Define the AI persona and rules..." />
+                    <small class="text-muted">Instructions for the AI on how to behave for this client.</small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1" disabled="@isProcessing">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>Processing...</span>
+                        }
+                        else
+                        {
+                            <i class="@(isEditing ? "bi bi-check-circle" : "bi bi-check-lg") me-2"></i> 
+                            <span>@(isEditing ? "Update Client" : "Create Client")</span>
+                        }
+                    </button>
+                    
+                    @if (isEditing)
+                    {
+                        <button type="button" class="btn btn-outline-secondary" @onclick="CancelEdit">
+                            Cancel
+                        </button>
+                    }
+                </div>
+            </EditForm>
+
+            @if (showSuccess)
+            {
+                <div class="alert alert-success mt-3">
+                    <i class="bi bi-check-circle-fill me-2"></i> Client created successfully!
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Existing Clients List -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="bi bi-people-fill me-2"></i> Existing Clients</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive client-list-scroll">
+                <table class="table table-hover mb-0">
+                    <thead class="sticky-top">
+                        <tr>
+                            <th>Name</th>
+                            <th>Integration Link</th>
+                            <th style="width: 120px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tenant in tenants)
+                        {
+                            <tr>
+                                <td class="fw-bold">@tenant.Name</td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control" value="https://hattieai.touchpointe.digital/?tenantId=@tenant.Id" readonly />
+                                        <button class="btn btn-outline-secondary" @onclick="() => CopyToClipboard(tenant.Id)" title="Copy Link">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => EditTenant(tenant)" title="Edit Client">
+                                        <i class="bi bi-pencil-square me-1"></i> Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @if (!tenants.Any())
+                        {
+                            <tr>
+                                <td colspan="2" class="text-center py-4 text-muted">No clients found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    @@media (max-width: 992px) {
+        .content-grid {
+            grid-template-columns: 1fr;
         }
-    </tbody>
-</table>
+    }
+
+    .table th {
+        background-color: var(--surface-color); /* Ensure background is opaque for sticky header */
+        font-weight: 600;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .client-list-scroll {
+        max-height: calc(100vh - 250px);
+        overflow-y: auto;
+    }
+
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-color);
+    }
+
+    .table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .input-group .form-control {
+        background-color: var(--background-color);
+        border-right: none;
+        font-family: monospace;
+        font-size: 0.85rem;
+    }
+
+    .input-group .btn {
+        border-left: none;
+    }
+</style>
 
 @code {
     private Tenant newTenant = new Tenant();
     private List<Tenant> tenants = new List<Tenant>();
     private bool showSuccess = false;
+    private string errorMessage = string.Empty;
+    private bool isEditing = false;
+    private bool isProcessing = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,18 +201,98 @@
     private async Task LoadTenants()
     {
         using var context = DbFactory.CreateDbContext();
-        tenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
+        tenants = await context.Tenants.IgnoreQueryFilters().OrderByDescending(t => t.CreatedAt).ToListAsync();
     }
 
     private async Task HandleValidSubmit()
     {
-        using var context = DbFactory.CreateDbContext();
-        context.Tenants.Add(newTenant);
-        await context.SaveChangesAsync();
-        showSuccess = true;
-        newTenant = new Tenant(); // Reset
-        await LoadTenants();
+        if (isProcessing) return;
+        isProcessing = true;
+        showSuccess = false;
+        errorMessage = string.Empty;
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            
+            // Check for duplicate name
+            bool nameExists;
+            if (isEditing)
+            {
+                nameExists = await context.Tenants.IgnoreQueryFilters()
+                    .AnyAsync(t => t.Name.ToLower() == newTenant.Name.ToLower() && t.Id != newTenant.Id);
+            }
+            else
+            {
+                nameExists = await context.Tenants.IgnoreQueryFilters()
+                    .AnyAsync(t => t.Name.ToLower() == newTenant.Name.ToLower());
+            }
+
+            if (nameExists)
+            {
+                errorMessage = "A client with this name already exists. Please choose a different name.";
+                return;
+            }
+            
+            if (isEditing)
+            {
+                var existingTenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == newTenant.Id);
+                if (existingTenant != null)
+                {
+                    existingTenant.Name = newTenant.Name;
+                    existingTenant.SystemInstruction = newTenant.SystemInstruction;
+                    await context.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                context.Tenants.Add(newTenant);
+                await context.SaveChangesAsync();
+            }
+
+            showSuccess = true;
+            await LoadTenants();
+            
+            // Reset form but keep success message visible for a moment
+            newTenant = new Tenant(); 
+            isEditing = false;
+            
+            // Hide success message after 3 seconds
+            await Task.Delay(3000);
+            showSuccess = false;
+            StateHasChanged();
+        }
+        finally
+        {
+            isProcessing = false;
+        }
     }
+
+    private void EditTenant(Tenant tenant)
+    {
+        // Create a copy to avoid modifying the list item directly before saving
+        newTenant = new Tenant
+        {
+            Id = tenant.Id,
+            Name = tenant.Name,
+            SystemInstruction = tenant.SystemInstruction,
+            CreatedAt = tenant.CreatedAt,
+            KnowledgeBaseText = tenant.KnowledgeBaseText
+        };
+        isEditing = true;
+        showSuccess = false;
+        errorMessage = string.Empty;
+    }
+
+    private void CancelEdit()
+    {
+        newTenant = new Tenant();
+        isEditing = false;
+        showSuccess = false;
+        errorMessage = string.Empty;
+    }
+
+
 
     private void CopyToClipboard(Guid tenantId)
     {

@@ -24,6 +24,10 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/ajmal/Desktop/kravino Innovations/touchpointe/Hattie_AI/HattieAI.Portal/Components/Layout/LoginLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcTG9naW5MYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/ajmal/Desktop/kravino Innovations/touchpointe/Hattie_AI/HattieAI.Portal/Components/Pages/BrainUpload.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xCcmFpblVwbG9hZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 

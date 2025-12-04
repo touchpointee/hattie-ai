@@ -1,30 +1,481 @@
 ﻿@page "/"
-@using Microsoft.AspNetCore.Components.Authorization
-@inject NavigationManager Navigation
+@using HattieAI.Portal.Auth
+@using HattieAI.Infrastructure.Persistence
+@using Microsoft.EntityFrameworkCore
+@using HattieAI.Domain.Entities
 @attribute [Authorize]
+@inject IDbContextFactory<HattieDbContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Dashboard</PageTitle>
+<PageTitle>Dashboard | Hattie AI</PageTitle>
 
-<h1>Admin Dashboard</h1>
-<p>Welcome to the Hattie AI Admin Portal.</p>
-
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Client Management</h5>
-                <p class="card-text">Onboard new clients and manage existing ones.</p>
-                <a href="clients" class="btn btn-primary">Manage Clients</a>
-            </div>
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="welcome-text">
+            <h1>Welcome back, @userName!</h1>
+            <p>Here's what's happening with your AI clients today.</p>
+        </div>
+        <div class="welcome-actions">
+            <a href="clients" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i> New Client
+            </a>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Knowledge Base</h5>
-                <p class="card-text">Upload and manage knowledge base documents.</p>
-                <a href="knowledge-base" class="btn btn-primary">Manage Knowledge Base</a>
+
+    <div class="dashboard-grid">
+        <!-- Stats Cards -->
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Total Clients</h3>
+                <p class="stat-value">@totalClients</p>
+                <p class="stat-trend neutral">
+                    <i class="bi bi-check-circle"></i> Active Tenants
+                </p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon secondary">
+                <i class="bi bi-chat-dots-fill"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Total Sessions</h3>
+                <p class="stat-value">@totalSessions</p>
+                <p class="stat-trend positive">
+                    <i class="bi bi-activity"></i> All time
+                </p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="bi bi-chat-left-text-fill"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Total Messages</h3>
+                <p class="stat-value">@totalMessages</p>
+                <p class="stat-trend positive">
+                    <i class="bi bi-envelope"></i> Processed
+                </p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="bi bi-hdd-stack-fill"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Knowledge Base</h3>
+                <p class="stat-value">@clientsWithKnowledge</p>
+                <p class="stat-trend neutral">
+                    <i class="bi bi-database"></i> Clients with data
+                </p>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="dashboard-section activity-section">
+            <div class="section-header">
+                <h3><i class="bi bi-clock-history me-2"></i> Recent Clients</h3>
+                <a href="clients" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="activity-list">
+                @if (recentClients.Any())
+                {
+                    @foreach (var client in recentClients)
+                    {
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="bi bi-person-plus"></i>
+                            </div>
+                            <div class="activity-details">
+                                <span class="activity-title"><strong>@client.Name</strong> was onboarded</span>
+                                <span class="activity-time">@client.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</span>
+                            </div>
+                            <div class="activity-action">
+                                <a href="clients" class="btn btn-sm btn-icon"><i class="bi bi-chevron-right"></i></a>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p>No recent activity found.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dashboard-section actions-section">
+            <div class="section-header">
+                <h3><i class="bi bi-lightning-charge me-2"></i> Quick Actions</h3>
+            </div>
+            <div class="action-buttons">
+                <a href="clients" class="action-card">
+                    <div class="action-icon primary"><i class="bi bi-person-plus-fill"></i></div>
+                    <div class="action-text">
+                        <h4>Onboard Client</h4>
+                        <p>Add a new tenant</p>
+                    </div>
+                    <i class="bi bi-arrow-right action-arrow"></i>
+                </a>
+                <a href="knowledge-base" class="action-card">
+                    <div class="action-icon secondary"><i class="bi bi-cloud-upload-fill"></i></div>
+                    <div class="action-text">
+                        <h4>Manage Knowledge</h4>
+                        <p>Upload documents</p>
+                    </div>
+                    <i class="bi bi-arrow-right action-arrow"></i>
+                </a>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .dashboard-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .welcome-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .welcome-text h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(to right, #fff, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .welcome-text p {
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
+
+    /* Stats Cards */
+    .stat-card {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        transition: transform 0.2s, box-shadow 0.2s;
+        grid-column: span 1;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--primary-color);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .stat-icon.primary { background: var(--primary-gradient); }
+    .stat-icon.secondary { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+    .stat-icon.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .stat-icon.warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+
+    .stat-content h3 {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin: 0 0 0.25rem 0;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem 0;
+        color: var(--text-color);
+    }
+
+    .stat-trend {
+        font-size: 0.75rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .stat-trend.positive { color: var(--success-color); }
+    .stat-trend.neutral { color: var(--text-muted); }
+
+    /* Sections */
+    .dashboard-section {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .activity-section {
+        grid-column: span 3;
+    }
+
+    .actions-section {
+        grid-column: span 1;
+    }
+
+    @@media (max-width: 1200px) {
+        .dashboard-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .stat-card { grid-column: span 1; }
+        .activity-section { grid-column: span 2; }
+        .actions-section { grid-column: span 2; }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+        .stat-card, .activity-section, .actions-section {
+            grid-column: span 1;
+        }
+        .welcome-section {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Activity List */
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .activity-item:hover {
+        background: rgba(0, 0, 0, 0.04);
+        border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(99, 102, 241, 0.1);
+        color: var(--primary-color);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+    }
+
+    .activity-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .activity-title {
+        font-size: 0.95rem;
+        color: var(--text-color);
+    }
+
+    .activity-time {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .btn-icon {
+        color: var(--text-muted);
+    }
+
+    .btn-outline {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .btn-outline:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background: rgba(0, 0, 0, 0.02);
+    }
+
+    /* Action Cards */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .action-card {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+    }
+
+    .action-card:hover {
+        background: rgba(0, 0, 0, 0.04);
+        border-color: var(--primary-color);
+        transform: translateX(4px);
+    }
+
+    .action-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: white;
+    }
+
+    .action-icon.primary { background: var(--primary-gradient); }
+    .action-icon.secondary { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+
+    .action-text h4 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .action-text p {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .action-arrow {
+        margin-left: auto;
+        color: var(--text-muted);
+        transition: transform 0.2s;
+    }
+
+    .action-card:hover .action-arrow {
+        color: var(--primary-color);
+        transform: translateX(2px);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-muted);
+    }
+    
+    .empty-state i {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+</style>
+
+@code {
+    private int totalClients;
+    private int totalSessions;
+    private int totalMessages;
+    private int clientsWithKnowledge;
+    private string userName = "Admin";
+    private List<Tenant> recentClients = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userName = user.Identity.Name ?? "Admin";
+        }
+
+        using var context = DbFactory.CreateDbContext();
+        
+        // We need to ignore query filters to see global stats as Admin
+        var queryableTenants = context.Tenants.IgnoreQueryFilters();
+        var queryableSessions = context.ChatSessions.IgnoreQueryFilters();
+        var queryableMessages = context.ChatMessages.IgnoreQueryFilters();
+
+        totalClients = await queryableTenants.CountAsync();
+        totalSessions = await queryableSessions.CountAsync();
+        totalMessages = await queryableMessages.CountAsync();
+        
+        // Check how many clients have knowledge base text
+        clientsWithKnowledge = await queryableTenants
+            .Where(t => !string.IsNullOrEmpty(t.KnowledgeBaseText))
+            .CountAsync();
+
+        recentClients = await queryableTenants
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(5)
+            .ToListAsync();
+    }
+}
