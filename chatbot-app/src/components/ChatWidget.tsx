@@ -9,16 +9,39 @@ interface ChatWidgetProps {
 export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [language, setLanguage] = useState<'en' | 'ar'>('en');
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!mounted) return null;
+    const [languages, setLanguages] = useState<{ code: string; name: string }[]>([]);
+    const [language, setLanguage] = useState<string>('en');
 
     const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
     const logoUrl = import.meta.env.DEV ? '/hattie.png' : `${apiUrl}/hattie.png`;
+
+    useEffect(() => {
+        setMounted(true);
+        // Fetch tenant info to get supported languages
+        if (chatbotId) {
+            fetch(`${apiUrl}/api/Tenants/${chatbotId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.supportedLanguages && data.supportedLanguages.length > 0) {
+                        setLanguages(data.supportedLanguages);
+                        // Set default language if current is not in list
+                        if (!data.supportedLanguages.some((l: any) => l.code === language)) {
+                            setLanguage(data.supportedLanguages[0].code);
+                        }
+                    } else {
+                        // Fallback
+                        setLanguages([{ code: 'en', name: 'English' }]);
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to fetch tenant info:", err);
+                    // Fallback
+                    setLanguages([{ code: 'en', name: 'English' }]);
+                });
+        }
+    }, [chatbotId, apiUrl]);
+
+    if (!mounted) return null;
 
     return (
         <>
@@ -60,18 +83,15 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
 
                 {/* Language Selector */}
                 <div className="hattie-language-selector">
-                    <button
-                        className={`hattie-lang-btn ${language === 'en' ? 'active' : ''}`}
-                        onClick={() => setLanguage('en')}
-                    >
-                        English
-                    </button>
-                    <button
-                        className={`hattie-lang-btn ${language === 'ar' ? 'active' : ''}`}
-                        onClick={() => setLanguage('ar')}
-                    >
-                        العربية
-                    </button>
+                    {languages.map(lang => (
+                        <button
+                            key={lang.code}
+                            className={`hattie-lang-btn ${language === lang.code ? 'active' : ''}`}
+                            onClick={() => setLanguage(lang.code)}
+                        >
+                            {lang.name}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Chat Body */}

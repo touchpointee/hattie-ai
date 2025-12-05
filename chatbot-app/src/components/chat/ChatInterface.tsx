@@ -10,28 +10,51 @@ interface MessageType {
 
 interface Props {
     chatbotId: string; // This is the tenantId
-    language?: 'en' | 'ar';
+    language?: string;
 }
 
-const translations = {
-    en: {
-        greeting: 'Hello! I am your AI Assistant.',
-        description: "",
-        today: 'Today',
-        placeholder: 'Message...',
-        privacy: 'Privacy'
-    },
-    ar: {
-        greeting: 'مرحباً! أنا مساعد الذكاء الاصطناعي الخاص بك.',
-        description: '',
-        today: 'اليوم',
-        placeholder: 'رسالة...',
-        privacy: 'الخصوصية'
-    }
+const translations: Record<string, any> = {
+    en: { greeting: 'Hello! I am your AI Assistant.', today: 'Today', placeholder: 'Message...', privacy: 'Privacy' },
+    ar: { greeting: 'مرحباً! أنا مساعد الذكاء الاصطناعي الخاص بك.', today: 'اليوم', placeholder: 'رسالة...', privacy: 'الخصوصية' },
+    es: { greeting: '¡Hola! Soy tu asistente de IA.', today: 'Hoy', placeholder: 'Mensaje...', privacy: 'Privacidad' },
+    fr: { greeting: 'Bonjour ! Je suis votre assistant IA.', today: "Aujourd'hui", placeholder: 'Message...', privacy: 'Confidentialité' },
+    de: { greeting: 'Hallo! Ich bin Ihr KI-Assistent.', today: 'Heute', placeholder: 'Nachricht...', privacy: 'Datenschutz' },
+    it: { greeting: 'Ciao! Sono il tuo assistente IA.', today: 'Oggi', placeholder: 'Messaggio...', privacy: 'Privacy' },
+    pt: { greeting: 'Olá! Sou seu assistente de IA.', today: 'Hoje', placeholder: 'Mensagem...', privacy: 'Privacidade' },
+    ru: { greeting: 'Привет! Я ваш ИИ-помощник.', today: 'Сегодня', placeholder: 'Сообщение...', privacy: 'Конфиденциальность' },
+    zh: { greeting: '你好！我是你的AI助手。', today: '今天', placeholder: '消息...', privacy: '隐私' },
+    ja: { greeting: 'こんにちは！私はあなたのAIアシスタントです。', today: '今日', placeholder: 'メッセージ...', privacy: 'プライバシー' },
+    ko: { greeting: '안녕하세요! 저는 AI 어시스턴트입니다.', today: '오늘', placeholder: '메시지...', privacy: '개인정보' },
+    hi: { greeting: 'नमस्ते! मैं आपका एआई सहायक हूँ।', today: 'आज', placeholder: 'संदेश...', privacy: 'गोपनीयता' },
+    tr: { greeting: 'Merhaba! Ben AI Asistanınızım.', today: 'Bugün', placeholder: 'Mesaj...', privacy: 'Gizlilik' },
+    nl: { greeting: 'Hallo! Ik ben uw AI-assistent.', today: 'Vandaag', placeholder: 'Bericht...', privacy: 'Privacy' },
+    pl: { greeting: 'Cześć! Jestem Twoim asystentem AI.', today: 'Dzisiaj', placeholder: 'Wiadomość...', privacy: 'Prywatność' },
+    sv: { greeting: 'Hej! Jag är din AI-assistent.', today: 'Idag', placeholder: 'Meddelande...', privacy: 'Integritet' },
+    da: { greeting: 'Hej! Jeg er din AI-assistent.', today: 'I dag', placeholder: 'Besked...', privacy: 'Privatliv' },
+    fi: { greeting: 'Hei! Olen tekoälyavustajasi.', today: 'Tänään', placeholder: 'Viesti...', privacy: 'Tietosuoja' },
+    no: { greeting: 'Hei! Jeg er din AI-assistent.', today: 'I dag', placeholder: 'Melding...', privacy: 'Personvern' },
+    cs: { greeting: 'Ahoj! Jsem váš AI asistent.', today: 'Dnes', placeholder: 'Zpráva...', privacy: 'Soukromí' },
+    el: { greeting: 'Γεια σας! Είμαι o AI βοηθός σας.', today: 'Σήμερα', placeholder: 'Μήνυμα...', privacy: 'Απόρρητο' },
+    hu: { greeting: 'Szia! Én vagyok az AI asszisztense.', today: 'Ma', placeholder: 'Üzenet...', privacy: 'Adatvédelem' },
+    ro: { greeting: 'Salut! Sunt asistentul tău AI.', today: 'Astăzi', placeholder: 'Mesaj...', privacy: 'Confidențialitate' },
+    th: { greeting: 'สวัสดี! ฉันคือผู้ช่วย AI ของคุณ', today: 'วันนี้', placeholder: 'ข้อความ...', privacy: 'ความเป็นส่วนตัว' },
+    vi: { greeting: 'Xin chào! Tôi là trợ lý AI của bạn.', today: 'Hôm nay', placeholder: 'Tin nhắn...', privacy: 'Quyền riêng tư' },
+    id: { greeting: 'Halo! Saya asisten AI Anda.', today: 'Hari ini', placeholder: 'Pesan...', privacy: 'Privasi' },
+    ms: { greeting: 'Helo! Saya pembantu AI anda.', today: 'Hari ini', placeholder: 'Mesej...', privacy: 'Privasi' },
+    he: { greeting: 'שלום! אני עוזר ה-AI שלך.', today: 'היום', placeholder: 'הודעה...', privacy: 'פרטיות' },
+    fa: { greeting: 'سلام! من دستیار هوش مصنوعی شما هستم.', today: 'امروز', placeholder: 'پیام...', privacy: 'حریم خصوصی' },
+    ur: { greeting: 'ہیلو! میں آپ کا AI اسسٹنٹ ہوں۔', today: 'آج', placeholder: 'پیغام...', privacy: 'رازداری' }
 };
 
 export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
-    const t = translations[language];
+    // robust fallback: exact match -> region match -> english -> hardcoded default
+    const langCode = language ? language.split('-')[0] : 'en';
+    const t = translations[language] || translations[langCode] || translations['en'] || {
+        greeting: 'Hello! I am your AI Assistant.',
+        today: 'Today',
+        placeholder: 'Message...',
+        privacy: 'Privacy'
+    };
     const [messages, setMessages] = useState<MessageType[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -176,7 +199,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         </div>
 
                         {/* Welcome Message */}
-                        <div className="hattie-welcome-message-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                        <div className="hattie-welcome-message-container" style={{ direction: ['ar', 'he', 'fa', 'ur'].includes(language) ? 'rtl' : 'ltr' }}>
                             <div className="hattie-bot-avatar-small">
                                 <img
                                     src={logoUrl}
@@ -230,7 +253,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
             </div>
 
             {/* Input */}
-            <div className="hattie-input-container" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+            <div className="hattie-input-container" style={{ direction: ['ar', 'he', 'fa', 'ur'].includes(language) ? 'rtl' : 'ltr' }}>
                 <div className="hattie-input-wrapper">
                     <input
                         type="text"
@@ -240,7 +263,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                         onKeyDown={handleKeyDown}
                         placeholder={t.placeholder}
                         disabled={loading}
-                        style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
+                        style={{ textAlign: ['ar', 'he', 'fa', 'ur'].includes(language) ? 'right' : 'left' }}
                     />
                     <button
                         className="hattie-send-button"
