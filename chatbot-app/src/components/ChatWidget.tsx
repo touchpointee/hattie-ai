@@ -12,7 +12,13 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
     const [languages, setLanguages] = useState<{ code: string; name: string }[]>([]);
     const [language, setLanguage] = useState<string>('en');
 
-    const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
+    let apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
+
+    // Safety check: If in production mode but URL is localhost, force production URL
+    if (import.meta.env.PROD && apiUrl.includes('localhost')) {
+        apiUrl = 'https://hattie.touchpointe.digital';
+    }
+
     const logoUrl = import.meta.env.DEV ? '/hattie.png' : `${apiUrl}/hattie.png`;
 
     useEffect(() => {
