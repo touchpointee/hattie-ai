@@ -7,6 +7,8 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HattieAI.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace HattieAI.API.Hubs
 {
@@ -39,8 +41,14 @@ namespace HattieAI.API.Hubs
                  return;
             }
 
-            var language = Context.GetHttpContext()?.Request.Query["language"].ToString() ?? "en";
-            var isArabic = language.ToLower() == "ar";
+            var languageCode = Context.GetHttpContext()?.Request.Query["language"].ToString() ?? "en";
+            var languageName = "English";
+            
+            var languageEntity = await _dbContext.Languages.FirstOrDefaultAsync(l => l.Code == languageCode);
+            if (languageEntity != null)
+            {
+                languageName = languageEntity.Name;
+            }
 
             // 2. Construct Strict System Prompt
             var tenantName = tenant.Name ?? "the system";
@@ -50,14 +58,14 @@ namespace HattieAI.API.Hubs
 Provide helpful, natural assistance while strictly adhering to the provided Context for all business information.
 
 **CRITICAL RULES:**
-1. **LANGUAGE**: {(isArabic ? "You MUST respond in ARABIC language only." : "You MUST respond in ENGLISH language only.")}
+1. **LANGUAGE**: You MUST respond in {languageName?.ToUpper() ?? "ENGLISH"} language only.
 2. **VARY YOUR RESPONSES**: Never use the exact same phrase twice in a row.
 3. **BE NATURAL**: Speak like a real human assistant. Avoid robotic or hardcoded-sounding phrases.
 4. **CONTEXT IS KING**: For any question about {tenantName}, services, or products, you MUST derive your answer *only* from the provided Context.
-5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and suggest contacting the admin. {(isArabic ? "Say something like: 'عذراً، لا تتوفر لدي هذه المعلومة حالياً. يرجى التواصل مع الإدارة للمساعدة.'" : "Vary this apology too (e.g., 'I'm not sure about that one...', 'That info isn't available to me...', etc.).")}
+5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and suggest contacting the admin. (e.g., 'I'm not sure about that one...', 'That info isn't available to me...', etc. - translate this to {languageName} if needed).
 6. **CLARIFY VAGUENESS**: If the user is unclear, ask for more details naturally.";
             var knowledgeBase = tenant.KnowledgeBaseText ?? "";
-            Console.WriteLine($"[HattieHub] Tenant: {tenantName}, KB Length: {knowledgeBase.Length}");
+            Console.WriteLine($"[HattieHub] Tenant: {tenantName}, Language: {languageName}, KB Length: {knowledgeBase.Length}");
 
             // 3. Handle Session
             ChatSession session;

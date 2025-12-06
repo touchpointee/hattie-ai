@@ -1,8 +1,0 @@
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net9.0\HattieAI.API.csproj.AssemblyReference.cache
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net9.0\rpswa.dswa.cache.json
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net9.0\HattieAI.API.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net9.0\HattieAI.API.AssemblyInfoInputs.cache
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net9.0\HattieAI.API.AssemblyInfo.cs
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net9.0\HattieAI.API.csproj.CoreCompileInputs.cache
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net9.0\HattieAI.API.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net9.0\HattieAI.API.sourcelink.json

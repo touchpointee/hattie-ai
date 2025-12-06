@@ -1,0 +1,281 @@
+@page "/client-configuration"
+@using System
+@using HattieAI.Domain.Entities
+@using HattieAI.Infrastructure.Persistence
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<HattieDbContext> DbFactory
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+
+<div class="page-header">
+    <h1 class="page-title">Client Configuration</h1>
+    <p class="text-muted">Configure supported languages for each client.</p>
+</div>
+
+<div class="config-container">
+    @if (isLoading)
+    {
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="form-group mb-4">
+                    <label class="form-label">Select Client</label>
+                    <select class="form-select" @onchange="OnClientSelected">
+                        <option value="">-- Select a Client --</option>
+                        @foreach (var tenant in tenants)
+                        {
+                            <option value="@tenant.Id">@tenant.Name</option>
+                        }
+                    </select>
+                </div>
+
+                @if (selectedTenant != null)
+                {
+                    <div class="language-selection">
+                        <h4 class="section-title">Supported Languages</h4>
+                        <p class="text-sm text-muted mb-3">Select the languages available for this client's chatbot.</p>
+
+                        <div class="language-grid">
+                            @foreach (var language in allLanguages)
+                            {
+                                <div class="language-item @(IsLanguageSelected(language.Code) ? "selected" : "")" 
+                                     @onclick="() => ToggleLanguage(language.Code)">
+                                    <div class="checkbox-custom">
+                                        @if (IsLanguageSelected(language.Code))
+                                        {
+                                            <i class="bi bi-check-lg"></i>
+                                        }
+                                    </div>
+                                    <span class="lang-name">@language.Name</span>
+                                    <span class="lang-code">@language.Code</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="actions mt-4">
+                            <button class="btn btn-primary" @onclick="SaveConfiguration" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>Saving...</span>
+                                }
+                                else
+                                {
+                                    <span>Save Configuration</span>
+                                }
+                            </button>
+                            @if (!string.IsNullOrEmpty(successMessage))
+                            {
+                                <span class="text-success ms-3"><i class="bi bi-check-circle-fill me-1"></i> @successMessage</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .config-container {
+        max-width: 1200px;
+    }
+
+    .card {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .card-body {
+        padding: 2rem;
+    }
+
+    .language-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 4px;
+    }
+
+    .language-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--background-color);
+    }
+
+    .language-item:hover {
+        border-color: var(--primary-color);
+        background: rgba(var(--primary-rgb), 0.05);
+    }
+
+    .language-item.selected {
+        border-color: var(--primary-color);
+        background: rgba(var(--primary-rgb), 0.1);
+    }
+
+    .checkbox-custom {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--text-muted);
+        border-radius: 4px;
+        margin-right: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.2s;
+    }
+
+    .language-item.selected .checkbox-custom {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .lang-name {
+        font-weight: 500;
+        margin-right: auto;
+    }
+
+    .lang-code {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        background: rgba(0,0,0,0.05);
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+</style>
+
+@code {
+    private List<Tenant> tenants = new();
+    private List<Language> allLanguages = new();
+    private Tenant? selectedTenant;
+    private HashSet<string> selectedLanguageCodes = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        
+        // Load all tenants (ignoring query filters to see all clients as admin)
+        tenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
+        
+        // Load all languages
+        allLanguages = await context.Languages.OrderBy(l => l.Name).ToListAsync();
+        
+        isLoading = false;
+    }
+
+    private async Task OnClientSelected(ChangeEventArgs e)
+    {
+        var tenantId = e.Value?.ToString();
+        if (string.IsNullOrEmpty(tenantId))
+        {
+            selectedTenant = null;
+            selectedLanguageCodes.Clear();
+            return;
+        }
+
+        if (Guid.TryParse(tenantId, out var tenantGuid))
+        {
+            using var context = DbFactory.CreateDbContext();
+            selectedTenant = await context.Tenants
+                .Include(t => t.SupportedLanguages)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.Id == tenantGuid);
+
+            if (selectedTenant != null)
+            {
+                selectedLanguageCodes = selectedTenant.SupportedLanguages.Select(l => l.Code).ToHashSet();
+            }
+            successMessage = "";
+        }
+    }
+
+    private bool IsLanguageSelected(string code)
+    {
+        return selectedLanguageCodes.Contains(code);
+    }
+
+    private void ToggleLanguage(string code)
+    {
+        if (selectedLanguageCodes.Contains(code))
+        {
+            selectedLanguageCodes.Remove(code);
+        }
+        else
+        {
+            selectedLanguageCodes.Add(code);
+        }
+    }
+
+    private async Task SaveConfiguration()
+    {
+        if (selectedTenant == null) return;
+        var tenantIdToUpdate = selectedTenant.Id;
+
+        isSaving = true;
+        successMessage = "";
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var tenantToUpdate = await context.Tenants
+                .Include(t => t.SupportedLanguages)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.Id == tenantIdToUpdate);
+
+            if (tenantToUpdate != null)
+            {
+                // Clear existing languages
+                tenantToUpdate.SupportedLanguages.Clear();
+
+                // Add selected languages
+                var languagesToAdd = await context.Languages
+                    .Where(l => selectedLanguageCodes.Contains(l.Code))
+                    .ToListAsync();
+
+                foreach (var lang in languagesToAdd)
+                {
+                    tenantToUpdate.SupportedLanguages.Add(lang);
+                }
+
+                await context.SaveChangesAsync();
+                
+                // Update local state
+                selectedTenant = tenantToUpdate;
+                successMessage = "Configuration saved successfully!";
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+            Console.WriteLine($"Error saving configuration: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

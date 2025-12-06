@@ -39,7 +39,8 @@ namespace HattieAI.Infrastructure.AI
             var json = JsonSerializer.Serialize(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={_apiKey}", content);
+            Console.WriteLine($"[GeminiBroker] Using Key: {_apiKey?.Substring(0, 5)}... Model: gemini-2.5-flash-lite-preview-09-2025");
+            var response = await _httpClient.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-09-2025:generateContent?key={_apiKey}", content);
             
             if (!response.IsSuccessStatusCode)
             {

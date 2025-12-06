@@ -1,3 +1,11 @@
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.csproj.AssemblyReference.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.AssemblyInfoInputs.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.AssemblyInfo.cs
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.csproj.CoreCompileInputs.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.sourcelink.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\appsettings.Development.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\appsettings.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.API.staticwebassets.runtime.json
@@ -95,15 +103,6 @@ C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bi
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.Infrastructure.dll
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.Infrastructure.pdb
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\bin\Debug\net8.0\HattieAI.Domain.pdb
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.csproj.AssemblyReference.cache
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\rpswa.dswa.cache.json
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.AssemblyInfoInputs.cache
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.AssemblyInfo.cs
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.csproj.CoreCompileInputs.cache
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.MvcApplicationPartsAssemblyInfo.cs
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.sourcelink.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\rjimswa.dswa.cache.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
@@ -118,3 +117,5 @@ C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\ob
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.pdb
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.genruntimeconfig.cache
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\ref\HattieAI.API.dll
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

@@ -6,23 +6,30 @@ namespace HattieAI.Portal.Auth
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
-        private readonly ProtectedSessionStorage _sessionStorage;
+        private readonly ProtectedLocalStorage _localStorage;
         private ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
 
-        public CustomAuthStateProvider(ProtectedSessionStorage sessionStorage)
+        public CustomAuthStateProvider(ProtectedLocalStorage localStorage)
         {
-            _sessionStorage = sessionStorage;
+            _localStorage = localStorage;
         }
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             try
             {
-                var userSessionResult = await _sessionStorage.GetAsync<UserSession>("UserSession");
+                var userSessionResult = await _localStorage.GetAsync<UserSession>("UserSession");
                 var userSession = userSessionResult.Success ? userSessionResult.Value : null;
 
                 if (userSession == null)
                     return await Task.FromResult(new AuthenticationState(_anonymous));
+
+                // Check for expiration
+                if (userSession.ExpiryTime < DateTime.Now)
+                {
+                    await _localStorage.DeleteAsync("UserSession");
+                    return await Task.FromResult(new AuthenticationState(_anonymous));
+                }
 
                 var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
                 {
@@ -44,7 +51,10 @@ namespace HattieAI.Portal.Auth
 
             if (userSession != null)
             {
-                await _sessionStorage.SetAsync("UserSession", userSession);
+                // Set expiration to 48 hours from now
+                userSession.ExpiryTime = DateTime.Now.AddHours(48);
+                await _localStorage.SetAsync("UserSession", userSession);
+                
                 claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, userSession.UserName),
@@ -53,7 +63,7 @@ namespace HattieAI.Portal.Auth
             }
             else
             {
-                await _sessionStorage.DeleteAsync("UserSession");
+                await _localStorage.DeleteAsync("UserSession");
                 claimsPrincipal = _anonymous;
             }
 
@@ -65,5 +75,6 @@ namespace HattieAI.Portal.Auth
     {
         public string UserName { get; set; }
         public string Role { get; set; }
+        public DateTime ExpiryTime { get; set; }
     }
 }

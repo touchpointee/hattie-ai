@@ -24,16 +24,29 @@ namespace HattieAI.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Tenant>> GetTenant(Guid id)
+        public async Task<ActionResult<object>> GetTenant(Guid id)
         {
-            var tenant = await _context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == id);
+            var tenant = await _context.Tenants
+                .Include(t => t.SupportedLanguages)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.Id == id);
 
             if (tenant == null)
             {
                 return NotFound();
             }
 
-            return tenant;
+            // Project to DTO to avoid circular reference (Tenant -> Language -> Tenant)
+            return new
+            {
+                tenant.Name,
+                tenant.TenantId,
+                SupportedLanguages = tenant.SupportedLanguages.Select(l => new 
+                {
+                    l.Code,
+                    l.Name
+                }).ToList()
+            };
         }
 
         [HttpPost]

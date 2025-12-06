@@ -1,5 +1,7 @@
 using HattieAI.Domain.Common;
 
+
+
 namespace HattieAI.Domain.Entities
 {
     public class Tenant : BaseEntity
@@ -7,6 +9,7 @@ namespace HattieAI.Domain.Entities
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Client Name is required")]
         public string Name { get; set; } = string.Empty;
         public string SystemInstruction { get; set; } = "You are a helpful AI assistant.";
+        public ICollection<Language> SupportedLanguages { get; set; } = new List<Language>();
         public string KnowledgeBaseText { get; set; } = string.Empty;
     }
 }

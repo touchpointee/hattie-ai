@@ -32,6 +32,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xCcmFpblVwbG9hZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/ajmal/Desktop/kravino Innovations/touchpointe/Hattie_AI/HattieAI.Portal/Components/Pages/ClientConfiguration.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDbGllbnRDb25maWd1cmF0aW9uLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/ajmal/Desktop/kravino Innovations/touchpointe/Hattie_AI/HattieAI.Portal/Components/Pages/ClientOnboarding.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDbGllbnRPbmJvYXJkaW5nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 

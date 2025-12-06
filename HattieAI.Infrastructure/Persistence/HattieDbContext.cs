@@ -6,6 +6,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Globalization;
+using System.Collections.Generic;
 
 namespace HattieAI.Infrastructure.Persistence
 {
@@ -42,6 +44,7 @@ namespace HattieAI.Infrastructure.Persistence
         public DbSet<AppUser> AppUsers { get; set; } = null!;
         public DbSet<ChatSession> ChatSessions { get; set; } = null!;
         public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
+        public DbSet<Language> Languages { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -65,6 +68,64 @@ namespace HattieAI.Infrastructure.Persistence
                     modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
                 }
             }
+
+
+            // Seed Languages (User Requested List)
+            var languages = new List<Language>
+            {
+                new Language { Code = "en", Name = "English" },
+                new Language { Code = "zh-CN", Name = "Mandarin Chinese" },
+                new Language { Code = "hi", Name = "Hindi" },
+                new Language { Code = "es", Name = "Spanish" },
+                new Language { Code = "ar", Name = "Arabic" },
+                new Language { Code = "fr", Name = "French" },
+                new Language { Code = "bn", Name = "Bengali" },
+                new Language { Code = "pt", Name = "Portuguese" },
+                new Language { Code = "ur", Name = "Urdu" },
+                new Language { Code = "id", Name = "Indonesian" },
+                new Language { Code = "zh-TW", Name = "Standard Chinese (Traditional)" }, // Mapping for Non-Mandarin/Traditional
+                new Language { Code = "ru", Name = "Russian" },
+                new Language { Code = "ja", Name = "Japanese" },
+                new Language { Code = "pa", Name = "Punjabi" },
+                new Language { Code = "de", Name = "German" },
+                new Language { Code = "jv", Name = "Javanese" },
+                new Language { Code = "ko", Name = "Korean" },
+                new Language { Code = "te", Name = "Telugu" },
+                new Language { Code = "vi", Name = "Vietnamese" },
+                new Language { Code = "mr", Name = "Marathi" },
+                new Language { Code = "tr", Name = "Turkish" },
+                new Language { Code = "ta", Name = "Tamil" },
+                new Language { Code = "it", Name = "Italian" },
+                new Language { Code = "yue", Name = "Yue Chinese (Cantonese)" },
+                new Language { Code = "th", Name = "Thai" },
+                new Language { Code = "gu", Name = "Gujarati" },
+                new Language { Code = "kn", Name = "Kannada" },
+                new Language { Code = "fa", Name = "Persian (Farsi)" },
+                new Language { Code = "pl", Name = "Polish" },
+                new Language { Code = "uk", Name = "Ukrainian" },
+                new Language { Code = "ml", Name = "Malayalam" },
+                new Language { Code = "ms", Name = "Malay" },
+                new Language { Code = "ha", Name = "Hausa" },
+                new Language { Code = "my", Name = "Burmese" },
+                new Language { Code = "su", Name = "Sundanese" },
+                new Language { Code = "bho", Name = "Bhojpuri" },
+                new Language { Code = "nl", Name = "Dutch" },
+                new Language { Code = "yo", Name = "Yoruba" },
+                new Language { Code = "or", Name = "Odia (Oriya)" },
+                new Language { Code = "sd", Name = "Sindhi" },
+                new Language { Code = "am", Name = "Amharic" },
+                new Language { Code = "mai", Name = "Maithili" },
+                new Language { Code = "uz", Name = "Uzbek" },
+                new Language { Code = "skr", Name = "Saraiki" },
+                new Language { Code = "ne", Name = "Nepali" },
+                new Language { Code = "si", Name = "Sinhala" },
+                new Language { Code = "km", Name = "Khmer" },
+                new Language { Code = "az", Name = "Azerbaijani" },
+                new Language { Code = "ro", Name = "Romanian" },
+                new Language { Code = "ceb", Name = "Cebuano" }
+            };
+
+            modelBuilder.Entity<Language>().HasData(languages);
         }
         
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
