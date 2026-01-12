@@ -20,15 +20,19 @@ builder.Services.AddSignalR(options =>
     options.EnableDetailedErrors = true;
 });
 
-// CORS configuration
+// Tenant Provider
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
+
+// CORS configuration - Custom Provider
+builder.Services.AddSingleton<Microsoft.AspNetCore.Cors.Infrastructure.ICorsPolicyProvider, HattieAI.API.Services.TenantCorsPolicyProvider>();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder => builder
-            .SetIsOriginAllowed(_ => true) // Allow any origin
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials());
+    options.AddPolicy("DynamicTenantPolicy", builder => builder
+        .SetIsOriginAllowed(_ => true) // Fallback/Initial setup, strictly overwritten by provider usually
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials());
 });
 
 // Infrastructure Services
@@ -56,11 +60,23 @@ if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("post
 builder.Services.AddDbContext<HattieDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Tenant Provider
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
-
 var app = builder.Build();
+
+// Optimize: Apply Migrations at startup
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try 
+    {
+        var dbContext = services.GetRequiredService<HattieDbContext>();
+        dbContext.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 
@@ -70,7 +86,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 });
 
 // Enable CORS - Must be before UseHttpsRedirection and UseAuthorization
-app.UseCors("AllowAll");
+app.UseCors("DynamicTenantPolicy");
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -91,11 +107,7 @@ app.Use(async (context, next) =>
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
-    OnPrepareResponse = ctx =>
-    {
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    }
+    // Remove manual headers since CORS middleware handles it now
 });
 
 app.UseAuthorization();
@@ -119,16 +131,41 @@ public class HttpContextTenantProvider : ITenantProvider
     {
         get 
         {
-            // Try to get from Query String (for SignalR) or Header (for API)
             var context = _httpContextAccessor.HttpContext;
             if (context == null) return string.Empty;
 
-            if (context.Request.Query.TryGetValue("tenantId", out var tenantId))
+            // 1. Try Query String (SignalR, etc.)
+            if (context.Request.Query.TryGetValue("tenantId", out var tenantIdQuery))
             {
-                return tenantId.ToString();
+                return tenantIdQuery.ToString();
+            }
+
+            // 2. Try Headers
+            if (context.Request.Headers.TryGetValue("X-Tenant-ID", out var tenantIdHeader))
+            {
+                return tenantIdHeader.ToString();
+            }
+
+            // 3. Try Route Pattern (Api/Tenants/{id})
+            // Since CORS runs before routing might be fully finalized or if we just want to be robust:
+            var path = context.Request.Path.Value;
+            if (!string.IsNullOrEmpty(path))
+            {
+                // Regex for /api/Tenants/{guid}
+                // Case insensitive check
+                var match = System.Text.RegularExpressions.Regex.Match(path, @"/api/Tenants/([0-9a-fA-F-]{36})", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    return match.Groups[1].Value;
+                }
+            }
+
+            // 4. Fallback: Check standard routing if available (might be null if CORS middleware is early)
+            if (context.Request.RouteValues.TryGetValue("id", out var idRoute) && idRoute != null)
+            {
+                 return idRoute.ToString() ?? string.Empty;
             }
             
-            // Fallback or other logic
             return string.Empty;
         }
     }

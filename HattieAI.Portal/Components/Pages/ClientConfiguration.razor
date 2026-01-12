@@ -77,6 +77,37 @@
                             }
                         </div>
                     </div>
+                    
+                    <div class="origins-config mt-5">
+                        <h4 class="section-title">Allowed Websites (CORS)</h4>
+                        <p class="text-sm text-muted mb-3">Add the specific website URLs where the chatbot will be embedded (e.g., https://example.com). This secures the connection.</p>
+                        
+                        <div class="input-group mb-3" style="max-width: 500px;">
+                            <input type="text" class="form-control" placeholder="https://yourwebsite.com" @bind="newOriginUrl" @bind:event="oninput" @onkeypress="HandleEnterKey" />
+                            <button class="btn btn-outline-primary" type="button" @onclick="AddOrigin">Add Website</button>
+                        </div>
+                        
+                        @if (allowedOrigins.Count > 0)
+                        {
+                            <div class="list-group" style="max-width: 500px;">
+                                @foreach (var origin in allowedOrigins)
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>@origin</span>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveOrigin(origin)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning" style="max-width: 500px;">
+                                <i class="bi bi-exclamation-triangle me-2"></i> No websites configured. The chatbot may not work externally.
+                            </div>
+                        }
+                    </div>
                 }
             </div>
         </div>
@@ -170,6 +201,8 @@
     private List<Language> allLanguages = new();
     private Tenant? selectedTenant;
     private HashSet<string> selectedLanguageCodes = new();
+    private List<string> allowedOrigins = new();
+    private string newOriginUrl = "";
     private bool isLoading = true;
     private bool isSaving = false;
     private string successMessage = "";
@@ -194,6 +227,7 @@
         {
             selectedTenant = null;
             selectedLanguageCodes.Clear();
+            allowedOrigins.Clear();
             return;
         }
 
@@ -208,6 +242,7 @@
             if (selectedTenant != null)
             {
                 selectedLanguageCodes = selectedTenant.SupportedLanguages.Select(l => l.Code).ToHashSet();
+                allowedOrigins = selectedTenant.AllowedOrigins?.ToList() ?? new List<string>();
             }
             successMessage = "";
         }
@@ -228,6 +263,33 @@
         {
             selectedLanguageCodes.Add(code);
         }
+    }
+    
+    private void AddOrigin()
+    {
+        if (!string.IsNullOrWhiteSpace(newOriginUrl))
+        {
+            var url = newOriginUrl.Trim().TrimEnd('/');
+            // Basic validation or sanitization
+            if (!allowedOrigins.Contains(url))
+            {
+                allowedOrigins.Add(url);
+            }
+            newOriginUrl = "";
+        }
+    }
+    
+    private void HandleEnterKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddOrigin();
+        }
+    }
+    
+    private void RemoveOrigin(string origin)
+    {
+        allowedOrigins.Remove(origin);
     }
 
     private async Task SaveConfiguration()
@@ -260,6 +322,9 @@
                 {
                     tenantToUpdate.SupportedLanguages.Add(lang);
                 }
+                
+                // Update Origins
+                tenantToUpdate.AllowedOrigins = new List<string>(allowedOrigins);
 
                 await context.SaveChangesAsync();
                 

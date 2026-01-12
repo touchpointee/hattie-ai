@@ -11,5 +11,6 @@ namespace HattieAI.Domain.Entities
         public string SystemInstruction { get; set; } = "You are a helpful AI assistant.";
         public ICollection<Language> SupportedLanguages { get; set; } = new List<Language>();
         public string KnowledgeBaseText { get; set; } = string.Empty;
+        public List<string> AllowedOrigins { get; set; } = new();
     }
 }
