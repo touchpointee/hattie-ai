@@ -140,6 +140,27 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "HattieAI.API.Controllers.TenantsController",
+    "Method": "UpdateTenant",
+    "RelativePath": "api/Tenants/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "tenant",
+        "Type": "HattieAI.Domain.Entities.Tenant",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "HattieAI.API.Controllers.MigrationController",
     "Method": "RunMigrations",
     "RelativePath": "Migration",

@@ -45,6 +45,7 @@ namespace HattieAI.Infrastructure.Persistence
         public DbSet<ChatSession> ChatSessions { get; set; } = null!;
         public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
         public DbSet<Language> Languages { get; set; } = null!;
+        public DbSet<KnowledgeChunk> KnowledgeChunks { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

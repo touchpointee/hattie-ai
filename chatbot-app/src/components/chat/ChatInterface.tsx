@@ -64,10 +64,10 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
     const signalRRef = useRef<SignalRService | null>(null);
     const currentAiMessageRef = useRef<string>("");
 
-    let apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
+    let apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL;
 
     // Safety check: If in production mode but URL is localhost, force production URL
-    if (import.meta.env.PROD && apiUrl.includes('localhost')) {
+    if (import.meta.env.PROD && apiUrl?.includes('localhost') && window.location.hostname !== 'localhost') {
         apiUrl = 'https://hattie.touchpointe.digital';
     }
 

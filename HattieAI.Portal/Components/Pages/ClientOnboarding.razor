@@ -6,13 +6,16 @@
 @attribute [Authorize]
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Clients | Hattie AI</PageTitle>
 
 <div class="page-header">
-    <h1>Client Management</h1>
-    <p class="text-muted">Onboard new clients and manage existing integrations.</p>
+    <div class="header-content">
+        <h1>Client Management</h1>
+        <p class="text-muted">Onboard new clients and manage existing integrations.</p>
+    </div>
 </div>
 
 <div class="content-grid">
@@ -101,7 +104,7 @@
                                 <td class="fw-bold">@tenant.Name</td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="text" class="form-control" value="https://hattieai.touchpointe.digital/?tenantId=@tenant.Id" readonly />
+                                        <input type="text" class="form-control" value="https://localhost:5173/?tenantId=@tenant.Id" readonly />
                                         <button class="btn btn-outline-secondary" @onclick="() => CopyToClipboard(tenant.Id)" title="Copy Link">
                                             <i class="bi bi-clipboard"></i>
                                         </button>
@@ -130,6 +133,17 @@
 <style>
     .page-header {
         margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-content h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: var(--text-color);
+        letter-spacing: -0.02em;
     }
 
     .content-grid {
@@ -139,49 +153,142 @@
         align-items: start;
     }
 
-    @@media (max-width: 992px) {
-        .content-grid {
-            grid-template-columns: 1fr;
-        }
+    /* Form Card Styles */
+    .card {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 0.2s;
     }
 
-    .table th {
-        background-color: var(--surface-color); /* Ensure background is opaque for sticky header */
-        font-weight: 600;
-        color: var(--text-muted);
+    .card:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    .card-header {
+        background: transparent;
+        padding: 1.25rem 1.5rem;
         border-bottom: 1px solid var(--border-color);
-        padding: 1rem;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
+    .card-header h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        color: var(--text-color);
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--border-color);
+        padding: 0.6rem 0.8rem;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        background-color: var(--background-color);
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-light);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        background-color: #fff;
+    }
+
+    /* Table Styles */
+    .table-responsive {
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
+        overflow: hidden;
+    }
+    
     .client-list-scroll {
         max-height: calc(100vh - 250px);
         overflow-y: auto;
     }
 
+    .table {
+        margin-bottom: 0;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table th {
+        background-color: var(--surface-hover);
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem 1.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        text-align: left;
+    }
+
     .table td {
-        padding: 1rem;
+        padding: 1rem 1.5rem;
         vertical-align: middle;
         border-bottom: 1px solid var(--border-color);
         color: var(--text-color);
+        font-size: 0.95rem;
+        background-color: var(--surface-color);
     }
 
     .table tr:last-child td {
         border-bottom: none;
     }
 
+    .table tr:hover td {
+        background-color: var(--surface-hover);
+    }
+
+    .input-group {
+        box-shadow: var(--shadow-sm);
+        border-radius: var(--border-radius-sm);
+        overflow: hidden;
+    }
+
     .input-group .form-control {
         background-color: var(--background-color);
+        border: 1px solid var(--border-color);
         border-right: none;
-        font-family: monospace;
-        font-size: 0.85rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        color: var(--text-muted);
     }
 
     .input-group .btn {
+        border: 1px solid var(--border-color);
         border-left: none;
+        background: var(--surface-color);
+        color: var(--text-muted);
+        transition: all 0.2s;
+    }
+
+    .input-group .btn:hover {
+        background: var(--surface-hover);
+        color: var(--primary-color);
+    }
+
+    @@media (max-width: 992px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -294,9 +401,9 @@
 
 
 
-    private void CopyToClipboard(Guid tenantId)
+    private async Task CopyToClipboard(Guid tenantId)
     {
-        // In a real app, use JSInterop to copy to clipboard
-        // For now, user can manually copy from the input box
+        var runUrl = $"https://localhost:5173/?tenantId={tenantId}";
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", runUrl);
     }
 }

@@ -1,39 +1,62 @@
 :root {
-    /* Colors - Light Theme */
-    --primary-color: #4f46e5;
+    /* Premium Color Palette */
+    --primary-color: #3730a3;
+    /* Indigo 800 - Deep, professional primary */
+    --primary-dark: #312e81;
+    /* Indigo 900 */
+    --primary-light: #4f46e5;
     /* Indigo 600 */
-    --primary-dark: #4338ca;
-    /* Indigo 700 */
-    --primary-light: #6366f1;
-    /* Indigo 500 */
-    --secondary-color: #db2777;
-    /* Pink 600 */
 
-    --background-color: #f8fafc;
-    /* Slate 50 */
+    --secondary-color: #0f172a;
+    /* Slate 900 - Dark accent/text */
+    --accent-color: #6366f1;
+    /* Indigo 500 - Vibrant accent */
+
+    /* Backgrounds & Surfaces */
+    --background-color: #f1f5f9;
+    /* Slate 100 - Crisp light gray background */
     --surface-color: #ffffff;
-    /* White */
-    --text-color: #0f172a;
-    /* Slate 900 */
+    /* Pure White */
+    --surface-hover: #f8fafc;
+    /* Slate 50 */
+
+    /* Typography */
+    --text-color: #1e293b;
+    /* Slate 800 - Primary Text */
     --text-muted: #64748b;
-    /* Slate 500 */
+    /* Slate 500 - Secondary Text */
+    --text-light: #94a3b8;
+    /* Slate 400 - Disabled/Placeholder */
+
+    /* Borders */
     --border-color: #e2e8f0;
     /* Slate 200 */
 
+    /* Status Colors */
     --success-color: #10b981;
+    /* Emerald 500 */
     --warning-color: #f59e0b;
+    /* Amber 500 */
     --danger-color: #ef4444;
+    /* Red 500 */
+    --info-color: #0ea5e9;
+    /* Sky 500 */
 
     /* Gradients */
-    --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-    --surface-gradient: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    --primary-gradient: linear-gradient(135deg, #3730a3 0%, #4338ca 100%);
+    --surface-gradient: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    --sidebar-gradient: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
 
     /* Spacing & Radius */
+    --border-radius-sm: 8px;
     --border-radius: 12px;
-    --border-radius-lg: 16px;
+    --border-radius-lg: 20px;
+
+    /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --shadow-card: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* Scrollbar */

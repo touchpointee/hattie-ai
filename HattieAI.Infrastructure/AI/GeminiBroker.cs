@@ -72,5 +72,54 @@ namespace HattieAI.Infrastructure.AI
                 await Task.Delay(5); // Simulate typing effect
             }
         }
+
+
+        public async Task<float[]> GenerateEmbeddingAsync(string text)
+        {
+            var requestBody = new
+            {
+                model = "models/text-embedding-004",
+                content = new
+                {
+                    parts = new[]
+                    {
+                        new { text = text }
+                    }
+                }
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={_apiKey}", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Gemini Embedding API Error: {response.StatusCode}");
+                Console.WriteLine($"Error Content: {errorContent}");
+                // Return empty array or throw. For now, empty array to avoid breaking flows, but logging is key.
+                return Array.Empty<float>();
+            }
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(responseString);
+            
+            try 
+            {
+                // structure: { "embedding": { "values": [ ... ] } }
+                var values = doc.RootElement.GetProperty("embedding").GetProperty("values").EnumerateArray();
+                var floatList = new List<float>();
+                foreach (var v in values)
+                {
+                    floatList.Add(v.GetSingle());
+                }
+                return floatList.ToArray();
+            }
+            catch
+            {
+                return Array.Empty<float>();
+            }
+        }
     }
 }

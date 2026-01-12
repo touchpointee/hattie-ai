@@ -25,34 +25,77 @@ namespace HattieAI.API.Hubs
 
         public async Task SendMessage(string userMessage, Guid? chatSessionId)
         {
-            var tenantIdString = Context.GetHttpContext()?.Request.Query["tenantId"].ToString();
+            try
+            {
+                var tenantIdString = Context.GetHttpContext()?.Request.Query["tenantId"].ToString();
             
-            // 1. Fetch Tenant & Validate
-            if (!Guid.TryParse(tenantIdString, out var tenantIdGuid))
-            {
-                 await Clients.Caller.SendAsync("ReceiveError", "Invalid Tenant ID format.");
-                 return;
-            }
+                // 1. Fetch Tenant & Validate
+                if (!Guid.TryParse(tenantIdString, out var tenantIdGuid))
+                {
+                     await Clients.Caller.SendAsync("ReceiveError", "Invalid Tenant ID format.");
+                     return;
+                }
 
-            var tenant = await _dbContext.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantIdGuid);
-            if (tenant == null)
-            {
-                 await Clients.Caller.SendAsync("ReceiveError", "Tenant not found.");
-                 return;
-            }
+                var tenant = await _dbContext.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantIdGuid);
+                if (tenant == null)
+                {
+                     await Clients.Caller.SendAsync("ReceiveError", "Tenant not found.");
+                     return;
+                }
 
-            var languageCode = Context.GetHttpContext()?.Request.Query["language"].ToString() ?? "en";
-            var languageName = "English";
+                var languageCode = Context.GetHttpContext()?.Request.Query["language"].ToString() ?? "en";
+                var languageName = "English";
             
-            var languageEntity = await _dbContext.Languages.FirstOrDefaultAsync(l => l.Code == languageCode);
-            if (languageEntity != null)
-            {
-                languageName = languageEntity.Name;
-            }
+                var languageEntity = await _dbContext.Languages.FirstOrDefaultAsync(l => l.Code == languageCode);
+                if (languageEntity != null)
+                {
+                    languageName = languageEntity.Name;
+                }
 
-            // 2. Construct Strict System Prompt
-            var tenantName = tenant.Name ?? "the system";
-            var systemInstruction = $@"You are a friendly, intelligent, and professional AI assistant for {tenantName}.
+                // 2. Retrieval (Vector Search)
+                var knowledgeBase = "";
+            
+                // Generate embedding for user query
+                var queryEmbedding = await _geminiBroker.GenerateEmbeddingAsync(userMessage);
+            
+                if (queryEmbedding.Length > 0)
+                {
+                    // Fetch all chunks for this tenant (In-Memory Search for now)
+                    var chunks = await _dbContext.KnowledgeChunks
+                                        .Where(k => k.TenantId == tenantIdString)
+                                        .ToListAsync();
+                
+                    if (chunks.Any())
+                    {
+                        var scoredChunks = chunks
+                            .Select(c => new 
+                            { 
+                                Chunk = c, 
+                                Score = CosineSimilarity(c.Embedding, queryEmbedding) 
+                            })
+                            .OrderByDescending(x => x.Score)
+                            .Take(3)
+                            .ToList();
+                    
+                        knowledgeBase = string.Join("\n\n---\n\n", scoredChunks.Select(s => s.Chunk.Content));
+                        Console.WriteLine($"[HattieHub] Vector Search: Found {scoredChunks.Count} relevant chunks.");
+                    }
+                    else
+                    {
+                        // Fallback to legacy full text if no chunks exist
+                        knowledgeBase = tenant.KnowledgeBaseText ?? "";
+                        Console.WriteLine($"[HattieHub] Vector Search: No chunks found. Using legacy text.");
+                    }
+                }
+                else
+                {
+                     // Fallback if embedding fails
+                     knowledgeBase = tenant.KnowledgeBaseText ?? "";
+                }
+
+                // 3. Construct Strict System Prompt
+                var tenantName = tenant.Name ?? "the system";
+                var systemInstruction = $@"You are a friendly, intelligent, and professional AI assistant for {tenantName}.
 
 **Your Mission:**
 Provide helpful, natural assistance while strictly adhering to the provided Context for all business information.
@@ -64,87 +107,117 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
 4. **CONTEXT IS KING**: For any question about {tenantName}, services, or products, you MUST derive your answer *only* from the provided Context.
 5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and suggest contacting the admin. (e.g., 'I'm not sure about that one...', 'That info isn't available to me...', etc. - translate this to {languageName} if needed).
 6. **CLARIFY VAGUENESS**: If the user is unclear, ask for more details naturally.";
-            var knowledgeBase = tenant.KnowledgeBaseText ?? "";
-            Console.WriteLine($"[HattieHub] Tenant: {tenantName}, Language: {languageName}, KB Length: {knowledgeBase.Length}");
+            
+                Console.WriteLine($"[HattieHub] Tenant: {tenantName}, Language: {languageName}, KB Length: {knowledgeBase.Length}");
 
-            // 3. Handle Session
-            ChatSession session;
-            if (chatSessionId == null || chatSessionId == Guid.Empty)
-            {
-                session = new ChatSession
+                // 3. Handle Session
+                ChatSession session;
+                if (chatSessionId == null || chatSessionId == Guid.Empty)
+                {
+                    session = new ChatSession
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = tenantIdString,
+                        Title = userMessage.Length > 20 ? userMessage.Substring(0, 20) + "..." : userMessage,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _dbContext.ChatSessions.Add(session);
+                    await _dbContext.SaveChangesAsync();
+                
+                    await Clients.Caller.SendAsync("ReceiveSessionId", session.Id);
+                }
+                else
+                {
+                    session = await _dbContext.ChatSessions.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == chatSessionId);
+                    if (session == null)
+                    {
+                        await Clients.Caller.SendAsync("ReceiveError", "Session not found.");
+                        return;
+                    }
+                }
+
+                // 4. Fetch History (Before saving current message to avoid duplication in prompt)
+                var historyMessages = await _dbContext.ChatMessages
+                    .Where(m => m.ChatSessionId == session.Id)
+                    .OrderBy(m => m.CreatedAt)
+                    .ToListAsync();
+            
+                var historyBuilder = new StringBuilder();
+                foreach (var msg in historyMessages)
+                {
+                    historyBuilder.AppendLine($"{msg.Role}: {msg.Content}");
+                }
+                var history = historyBuilder.ToString();
+
+                // 5. Save User Message
+                var userChatMsg = new ChatMessage
                 {
                     Id = Guid.NewGuid(),
-                    TenantId = tenantIdString,
-                    Title = userMessage.Length > 20 ? userMessage.Substring(0, 20) + "..." : userMessage,
-                    CreatedAt = DateTime.UtcNow
+                    ChatSessionId = session.Id,
+                    Role = "user",
+                    Content = userMessage,
+                    CreatedAt = DateTime.UtcNow,
+                    TenantId = tenantIdString
                 };
-                _dbContext.ChatSessions.Add(session);
+                _dbContext.ChatMessages.Add(userChatMsg);
                 await _dbContext.SaveChangesAsync();
-                
-                await Clients.Caller.SendAsync("ReceiveSessionId", session.Id);
-            }
-            else
-            {
-                session = await _dbContext.ChatSessions.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == chatSessionId);
-                if (session == null)
+
+                // 6. Call Gemini with Strict Persona
+                await Clients.Caller.SendAsync("ReceiveMessageStart");
+            
+                var fullResponse = "";
+                var responseStream = _geminiBroker.GenerateResponseStreamAsync(systemInstruction, knowledgeBase, history, userMessage);
+
+                await foreach (var chunk in responseStream)
                 {
-                    await Clients.Caller.SendAsync("ReceiveError", "Session not found.");
-                    return;
+                    fullResponse += chunk;
+                    await Clients.Caller.SendAsync("ReceiveMessageChunk", chunk);
                 }
+            
+                await Clients.Caller.SendAsync("ReceiveMessageEnd");
+
+                // 7. Save AI Message
+                var aiChatMsg = new ChatMessage
+                {
+                    Id = Guid.NewGuid(),
+                    ChatSessionId = session.Id,
+                    Role = "model",
+                    Content = fullResponse,
+                    CreatedAt = DateTime.UtcNow,
+                    TenantId = tenantIdString
+                };
+                _dbContext.ChatMessages.Add(aiChatMsg);
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] SendMessage Failed: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                await Clients.Caller.SendAsync("ReceiveError", $"Server Error: {ex.Message}");
+                throw; // Rethrow to let SignalR handle it too if needed, but we already sent info to client
+            }
+        }
+
+
+        private static float CosineSimilarity(float[] vectorA, float[] vectorB)
+        {
+            if (vectorA == null || vectorB == null || vectorA.Length != vectorB.Length)
+                return 0f;
+
+            float dotProduct = 0f;
+            float magnitudeA = 0f;
+            float magnitudeB = 0f;
+
+            for (int i = 0; i < vectorA.Length; i++)
+            {
+                dotProduct += vectorA[i] * vectorB[i];
+                magnitudeA += vectorA[i] * vectorA[i];
+                magnitudeB += vectorB[i] * vectorB[i];
             }
 
-            // 4. Fetch History (Before saving current message to avoid duplication in prompt)
-            var historyMessages = await _dbContext.ChatMessages
-                .Where(m => m.ChatSessionId == session.Id)
-                .OrderBy(m => m.CreatedAt)
-                .ToListAsync();
-            
-            var historyBuilder = new StringBuilder();
-            foreach (var msg in historyMessages)
-            {
-                historyBuilder.AppendLine($"{msg.Role}: {msg.Content}");
-            }
-            var history = historyBuilder.ToString();
+            if (magnitudeA == 0 || magnitudeB == 0) return 0f;
 
-            // 5. Save User Message
-            var userChatMsg = new ChatMessage
-            {
-                Id = Guid.NewGuid(),
-                ChatSessionId = session.Id,
-                Role = "user",
-                Content = userMessage,
-                CreatedAt = DateTime.UtcNow,
-                TenantId = tenantIdString
-            };
-            _dbContext.ChatMessages.Add(userChatMsg);
-            await _dbContext.SaveChangesAsync();
-
-            // 6. Call Gemini with Strict Persona
-            await Clients.Caller.SendAsync("ReceiveMessageStart");
-            
-            var fullResponse = "";
-            var responseStream = _geminiBroker.GenerateResponseStreamAsync(systemInstruction, knowledgeBase, history, userMessage);
-
-            await foreach (var chunk in responseStream)
-            {
-                fullResponse += chunk;
-                await Clients.Caller.SendAsync("ReceiveMessageChunk", chunk);
-            }
-            
-            await Clients.Caller.SendAsync("ReceiveMessageEnd");
-
-            // 7. Save AI Message
-            var aiChatMsg = new ChatMessage
-            {
-                Id = Guid.NewGuid(),
-                ChatSessionId = session.Id,
-                Role = "model",
-                Content = fullResponse,
-                CreatedAt = DateTime.UtcNow,
-                TenantId = tenantIdString
-            };
-            _dbContext.ChatMessages.Add(aiChatMsg);
-            await _dbContext.SaveChangesAsync();
+            return dotProduct / ((float)Math.Sqrt(magnitudeA) * (float)Math.Sqrt(magnitudeB));
         }
     }
 }

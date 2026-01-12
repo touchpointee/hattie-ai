@@ -12,10 +12,11 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
     const [languages, setLanguages] = useState<{ code: string; name: string }[]>([]);
     const [language, setLanguage] = useState<string>('en');
 
-    let apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || 'https://hattie.touchpointe.digital';
+    let apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL;
 
     // Safety check: If in production mode but URL is localhost, force production URL
-    if (import.meta.env.PROD && apiUrl.includes('localhost')) {
+    // (This is for when we build and deploy to a host that isn't the chatbot host)
+    if (import.meta.env.PROD && apiUrl?.includes('localhost') && window.location.hostname !== 'localhost') {
         apiUrl = 'https://hattie.touchpointe.digital';
     }
 

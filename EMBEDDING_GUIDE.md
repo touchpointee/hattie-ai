@@ -88,4 +88,4 @@ If you are using the older Pages Router (`pages/_document.js`), you can add the 
 | Option | Type | Description | Required |
 | :--- | :--- | :--- | :--- |
 | `tenantId` | `string` | Your unique chatbot identifier. | **Yes** |
-| `apiUrl` | `string` | The backend API URL. Default: `https://hattie.touchpointe.digital` | No |
+| `apiUrl` | `string` | The backend API URL. Required if using a non-production backend (e.g., `http://localhost:5039`). | No |
