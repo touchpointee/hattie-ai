@@ -107,7 +107,12 @@ app.Use(async (context, next) =>
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
-    // Remove manual headers since CORS middleware handles it now
+    OnPrepareResponse = ctx =>
+    {
+        // Allow loading static assets (like the chatbot script) from any origin
+        ctx.Context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        ctx.Context.Response.Headers["Access-Control-Allow-Headers"] = "Origin, X-Requested-With, Content-Type, Accept";
+    }
 });
 
 app.UseAuthorization();

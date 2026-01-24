@@ -83,6 +83,55 @@ If you are using the older Pages Router (`pages/_document.js`), you can add the 
 
 ---
 
+## Option 3: WordPress
+
+There are two ways to add Hattie AI to your WordPress site.
+
+### Method A: Using a Code Snippet Plugin (Recommended for Beginners)
+
+1.  Install a plugin like **WPCode** or **Insert Headers and Footers**.
+2.  Navigate to the plugin's settings (usually **Code Snippets > Header & Footer**).
+3.  In the **Footer** (or **Body**) section, paste the following code:
+
+```html
+<!-- Hattie AI Configuration -->
+<script>
+  window.HattieAI = {
+    tenantId: "YOUR_TENANT_ID_HERE", // Replace with your actual Tenant ID
+    apiUrl: "https://hattie.touchpointe.digital" // Optional: API URL
+  };
+</script>
+
+<!-- Load Chatbot -->
+<link rel="stylesheet" href="https://hattie.touchpointe.digital/assets/index.css">
+<script type="module" src="https://hattie.touchpointe.digital/assets/index.js"></script>
+```
+
+### Method B: Theme functions.php (For Developers)
+
+If you prefer to code, add the following snippet to your theme's `functions.php` file (Appearance > Theme File Editor > Theme Functions):
+
+```php
+function add_hattie_ai_chatbot() {
+    ?>
+    <!-- Hattie AI Configuration -->
+    <script>
+      window.HattieAI = {
+        tenantId: "YOUR_TENANT_ID_HERE", // Replace with your actual Tenant ID
+        apiUrl: "https://hattie.touchpointe.digital"
+      };
+    </script>
+    
+    <!-- Load Chatbot -->
+    <link rel="stylesheet" href="https://hattie.touchpointe.digital/assets/index.css">
+    <script type="module" src="https://hattie.touchpointe.digital/assets/index.js"></script>
+    <?php
+}
+add_action('wp_footer', 'add_hattie_ai_chatbot');
+```
+
+---
+
 ## Configuration Options
 
 | Option | Type | Description | Required |
