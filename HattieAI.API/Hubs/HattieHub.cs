@@ -107,7 +107,8 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
 4. **CONTEXT IS KING**: For any question about {tenantName}, services, or products, you MUST derive your answer *only* from the provided Context.
 5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and suggest contacting the admin. (e.g., 'I'm not sure about that one...', 'That info isn't available to me...', etc. - translate this to {languageName} if needed).
 6. **NO FILLER**: Do NOT use phrases like 'I'd be happy to help', 'Great question', or 'Hello there'. Start the answer immediately.
-7. **SHORT ANSWERS**: Detailed essays are BANNED. Max 3 sentences. Use bullet points for lists. Ensure the user gets the answer easily.";
+7. **SHORT ANSWERS**: Detailed essays are BANNED. Max 3 sentences or bullet points.
+8. **CLARIFY ONLY IF UNSURE**: If the user's message is random or completely unclear, ask for specific clarification to avoid hallucinating. Otherwise, answer directly.";
             
                 Console.WriteLine($"[HattieHub] Tenant: {tenantName}, Language: {languageName}, KB Length: {knowledgeBase.Length}");
 
