@@ -36,7 +36,7 @@ builder.Services.AddCors(options =>
 });
 
 // Infrastructure Services
-builder.Services.AddHttpClient<GeminiBroker>();
+builder.Services.AddHttpClient<GroqBroker>();
 builder.Services.AddSingleton<DocumentBroker>();
 
 // Database

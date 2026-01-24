@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HattieAI.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cbadad80c5c7ae1f9981a5b69940cf4f0f3225b9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e85c421d88d37655f235b36358a305ccd8b5a88b")]
 [assembly: System.Reflection.AssemblyProductAttribute("HattieAI.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HattieAI.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

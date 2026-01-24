@@ -1,5 +1,4 @@
 using HattieAI.Domain.Entities;
-using HattieAI.Infrastructure.AI;
 using HattieAI.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,12 +11,10 @@ namespace HattieAI.API.Controllers
     public class TenantsController : ControllerBase
     {
         private readonly HattieDbContext _context;
-        private readonly GeminiBroker _geminiBroker;
 
-        public TenantsController(HattieDbContext context, GeminiBroker geminiBroker)
+        public TenantsController(HattieDbContext context)
         {
             _context = context;
-            _geminiBroker = geminiBroker;
         }
 
         [HttpGet]
@@ -102,8 +99,8 @@ namespace HattieAI.API.Controllers
                     var chunks = ChunkText(tenant.KnowledgeBaseText, 500); 
                     foreach (var chunkText in chunks)
                     {
-                        // 3. EMBED
-                        var vector = await _geminiBroker.GenerateEmbeddingAsync(chunkText);
+                        // 3. EMBED (using simple hash-based embedding)
+                        var vector = GenerateSimpleEmbedding(chunkText);
                         
                         // 4. SAVE
                         _context.KnowledgeChunks.Add(new KnowledgeChunk
@@ -150,6 +147,33 @@ namespace HattieAI.API.Controllers
                 chunks.Add(currentChunk);
             }
             return chunks;
+        }
+
+        /// <summary>
+        /// Simple hash-based embedding for vector search (Groq doesn't have embeddings API).
+        /// </summary>
+        private float[] GenerateSimpleEmbedding(string text)
+        {
+            const int dimensions = 768;
+            var embedding = new float[dimensions];
+            var words = text.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var word in words)
+            {
+                var hash = word.GetHashCode();
+                var index = Math.Abs(hash) % dimensions;
+                embedding[index] += 1.0f;
+            }
+
+            // Normalize
+            var magnitude = (float)Math.Sqrt(embedding.Sum(x => x * x));
+            if (magnitude > 0)
+            {
+                for (int i = 0; i < dimensions; i++)
+                    embedding[i] /= magnitude;
+            }
+
+            return embedding;
         }
     }
 }

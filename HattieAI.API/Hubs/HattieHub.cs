@@ -14,12 +14,12 @@ namespace HattieAI.API.Hubs
 {
     public class HattieHub : Hub
     {
-        private readonly GeminiBroker _geminiBroker;
+        private readonly GroqBroker _groqBroker;
         private readonly HattieDbContext _dbContext;
 
-        public HattieHub(GeminiBroker geminiBroker, HattieDbContext dbContext)
+        public HattieHub(GroqBroker groqBroker, HattieDbContext dbContext)
         {
-            _geminiBroker = geminiBroker;
+            _groqBroker = groqBroker;
             _dbContext = dbContext;
         }
 
@@ -56,7 +56,7 @@ namespace HattieAI.API.Hubs
                 var knowledgeBase = "";
             
                 // Generate embedding for user query
-                var queryEmbedding = await _geminiBroker.GenerateEmbeddingAsync(userMessage);
+                var queryEmbedding = await GenerateSimpleEmbeddingAsync(userMessage);
             
                 if (queryEmbedding.Length > 0)
                 {
@@ -167,11 +167,11 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                 _dbContext.ChatMessages.Add(userChatMsg);
                 await _dbContext.SaveChangesAsync();
 
-                // 6. Call Gemini with Strict Persona
+                // 6. Call Groq with Strict Persona
                 await Clients.Caller.SendAsync("ReceiveMessageStart");
             
                 var fullResponse = "";
-                var responseStream = _geminiBroker.GenerateResponseStreamAsync(systemInstruction, knowledgeBase, history, userMessage);
+                var responseStream = _groqBroker.GenerateResponseStreamAsync(systemInstruction, knowledgeBase, history, userMessage);
 
                 await foreach (var chunk in responseStream)
                 {
@@ -223,6 +223,35 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
             if (magnitudeA == 0 || magnitudeB == 0) return 0f;
 
             return dotProduct / ((float)Math.Sqrt(magnitudeA) * (float)Math.Sqrt(magnitudeB));
+        }
+
+        /// <summary>
+        /// Simple hash-based embedding for vector search (Groq doesn't have embeddings API).
+        /// For production, consider using a dedicated embedding service.
+        /// </summary>
+        private Task<float[]> GenerateSimpleEmbeddingAsync(string text)
+        {
+            // Simple bag-of-words style embedding using hash
+            const int dimensions = 768;
+            var embedding = new float[dimensions];
+            var words = text.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var word in words)
+            {
+                var hash = word.GetHashCode();
+                var index = Math.Abs(hash) % dimensions;
+                embedding[index] += 1.0f;
+            }
+
+            // Normalize
+            var magnitude = (float)Math.Sqrt(embedding.Sum(x => x * x));
+            if (magnitude > 0)
+            {
+                for (int i = 0; i < dimensions; i++)
+                    embedding[i] /= magnitude;
+            }
+
+            return Task.FromResult(embedding);
         }
     }
 }

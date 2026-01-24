@@ -109,10 +109,10 @@ C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\staticwebassets.build.json.cache
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\HattieAI.006E6560.Up2Date
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\HattieAI.Portal.dll
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\refint\HattieAI.Portal.dll
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\HattieAI.Portal.pdb
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\HattieAI.Portal.genruntimeconfig.cache
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\ref\HattieAI.Portal.dll
+C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.Portal\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
