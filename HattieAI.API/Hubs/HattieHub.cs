@@ -108,7 +108,7 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
 5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and suggest contacting the admin. (e.g., 'I'm not sure about that one...', 'That info isn't available to me...', etc. - translate this to {languageName} if needed).
 6. **NO FILLER**: Do NOT use phrases like 'I'd be happy to help', 'Great question', or 'Hello there'. Start the answer immediately.
 7. **SHORT ANSWERS**: Detailed essays are BANNED. Max 3 sentences or bullet points.
-8. **CLARIFY ONLY IF UNSURE**: If the user's message is random or completely unclear, ask for specific clarification to avoid hallucinating. Otherwise, answer directly.";
+8. **CLARIFY NATURALLY**: If the user's message is random or completely unclear, ask a specific question to understand their needs. Do NOT say 'That is a vague query'. Be helpful, polite, and human-like.";
             
                 Console.WriteLine($"[HattieHub] Tenant: {tenantName}, Language: {languageName}, KB Length: {knowledgeBase.Length}");
 
