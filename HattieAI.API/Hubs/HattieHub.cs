@@ -139,8 +139,11 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                 }
 
                 // 4. Fetch History (Before saving current message to avoid duplication in prompt)
+                // Limit to last 5 messages to reduce token costs
                 var historyMessages = await _dbContext.ChatMessages
                     .Where(m => m.ChatSessionId == session.Id)
+                    .OrderByDescending(m => m.CreatedAt)
+                    .Take(5)
                     .OrderBy(m => m.CreatedAt)
                     .ToListAsync();
             
