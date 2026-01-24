@@ -120,4 +120,3 @@ C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\ob
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.pdb
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\HattieAI.API.genruntimeconfig.cache
 C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\ref\HattieAI.API.dll
-C:\Users\ajmal\Desktop\kravino Innovations\touchpointe\Hattie_AI\HattieAI.API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
