@@ -6,6 +6,7 @@ networks:
 
 services:
   hattie-api:
+    container_name: hattie-api
     networks:
       - coolify
       - default
@@ -13,11 +14,18 @@ services:
       context: .
       dockerfile: HattieAI.API/Dockerfile
     environment:
-      - ConnectionStrings__DefaultConnection=${CONNECTION_STRING}
-      - Gemini__ApiKey=${GEMINI_API_KEY}
+      - 'ConnectionStrings__DefaultConnection=${CONNECTION_STRING}'
+      - 'Gemini__ApiKey=${GEMINI_API_KEY}'
+      - 'ASPNETCORE_URLS=http://+:8080'
     restart: always
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.hattie-api.rule=Host(`hattie-api.touchpointe.digital`)" # Change this if you have a different API domain
+      - "traefik.http.services.hattie-api.loadbalancer.server.port=8080"
 
- hattie-portal:
+  hattie-portal:
+    container_name: hattie-portal
     networks:
       - coolify
       - default
@@ -28,12 +36,12 @@ services:
       - 'ConnectionStrings__DefaultConnection=${CONNECTION_STRING}'
       - 'Gemini__ApiKey=${GEMINI_API_KEY}'
       - 'ApiSettings__BaseUrl=http://hattie-api:8080'
-      - 'ASPNETCORE_URLS=http://+:8080' # Ensure the app knows to use 8080
+      - 'ASPNETCORE_URLS=http://+:8080'
     depends_on:
       - hattie-api
     restart: always
-    # ADD THESE LABELS BELOW:
     labels:
+      - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.http.routers.hattie-portal.rule=Host(`hattie-portal.touchpointe.digital`)"
       - "traefik.http.routers.hattie-portal.entrypoints=websecure"
