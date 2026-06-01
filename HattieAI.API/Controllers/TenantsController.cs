@@ -42,6 +42,9 @@ namespace HattieAI.API.Controllers
             {
                 tenant.Name,
                 tenant.TenantId,
+                tenant.WelcomeMessage,
+                tenant.MaxTokensPerSession,
+                tenant.ContactEmail,
                 SupportedLanguages = tenant.SupportedLanguages.Select(l => new 
                 {
                     l.Code,
@@ -81,6 +84,9 @@ namespace HattieAI.API.Controllers
             }
 
             existingTenant.Name = tenant.Name;
+            existingTenant.ContactEmail = tenant.ContactEmail;
+            existingTenant.WelcomeMessage = tenant.WelcomeMessage;
+            existingTenant.MaxTokensPerSession = tenant.MaxTokensPerSession;
             existingTenant.SystemInstruction = tenant.SystemInstruction;
             existingTenant.SupportedLanguages = tenant.SupportedLanguages; // Handled by EF tracking if properly attached
 

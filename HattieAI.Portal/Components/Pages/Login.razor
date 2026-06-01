@@ -1,9 +1,12 @@
 @page "/login"
 @using HattieAI.Portal.Auth
 @using HattieAI.Portal.Components.Layout
+@using HattieAI.Infrastructure.Persistence
+@using Microsoft.EntityFrameworkCore
 @layout LoginLayout
 @inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager NavManager
+@inject IDbContextFactory<HattieDbContext> DbFactory
 @rendermode InteractiveServer
 
 <div class="login-container">
@@ -106,22 +109,40 @@
 </style>
 
 @code {
-    private string username;
-    private string password;
-    private string errorMessage;
+    private string username = "";
+    private string password = "";
+    private string errorMessage = "";
 
     private async Task Authenticate()
     {
-        // Hardcoded for simplicity as requested
-        if (username == "admin" && password == "admin")
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
-            var userSession = new UserSession { UserName = username, Role = "Admin" };
-            await AuthStateProvider.UpdateAuthenticationState(userSession);
-            NavManager.NavigateTo("/");
+            errorMessage = "Please enter both username and password.";
+            return;
         }
-        else
+
+        try
         {
-            errorMessage = "Invalid credentials. Please try again.";
+            using var context = DbFactory.CreateDbContext();
+            
+            var user = await context.AppUsers
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+
+            if (user != null && PasswordSecurity.VerifyPassword(password, user.PasswordHash))
+            {
+                var userSession = new UserSession { UserName = user.Username, Role = user.Role };
+                await AuthStateProvider.UpdateAuthenticationState(userSession);
+                NavManager.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = "Invalid username or password. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Authentication failed: {ex.Message}";
         }
     }
 }

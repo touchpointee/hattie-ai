@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using HattieAI.Portal.Auth
 @using HattieAI.Infrastructure.Persistence
 @using Microsoft.EntityFrameworkCore
@@ -221,7 +221,7 @@
     .dashboard-container {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.75rem;
         width: 100%;
     }
 
@@ -233,16 +233,24 @@
     }
 
     .date-picker-mock {
-        background: var(--surface-color);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: var(--backdrop-blur);
         border: 1px solid var(--border-color);
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 1.2rem;
         border-radius: var(--border-radius-sm);
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
+        font-weight: 500;
         color: var(--text-color);
         cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .date-picker-mock:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: var(--primary-light);
     }
 
     .control-actions {
@@ -251,13 +259,21 @@
     }
 
     .btn-white {
-        background: var(--surface-color);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: var(--backdrop-blur);
         border: 1px solid var(--border-color);
         color: var(--text-color);
+        font-size: 0.88rem;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius-sm);
+        transition: all 0.2s ease;
     }
     
     .btn-white:hover {
-        background: var(--surface-hover);
+        background: rgba(255, 255, 255, 0.07);
+        border-color: var(--primary-light);
+        color: white;
     }
 
     /* KPI Grid */
@@ -268,13 +284,22 @@
     }
 
     .kpi-card {
-        background: var(--surface-color);
+        background: rgba(17, 24, 39, 0.55);
+        backdrop-filter: var(--backdrop-blur);
+        -webkit-backdrop-filter: var(--backdrop-blur);
         border: 1px solid var(--border-color);
         border-radius: var(--border-radius);
-        padding: 1.25rem;
+        padding: 1.5rem;
         display: flex;
         justify-content: space-between;
         box-shadow: var(--shadow-sm);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md), 0 0 15px rgba(99, 102, 241, 0.08);
+        border-color: rgba(99, 102, 241, 0.25);
     }
 
     .kpi-content {
@@ -284,12 +309,12 @@
     }
 
     .kpi-label {
-        font-size: 0.8rem;
+        font-size: 0.72rem;
         color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
     }
 
     .kpi-value-row {
@@ -299,18 +324,27 @@
     }
 
     .kpi-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--text-color);
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #ffffff;
         line-height: 1;
+        letter-spacing: -0.02em;
     }
 
     .kpi-trend {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 600;
+        padding: 0.1rem 0.5rem;
+        border-radius: 99px;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
     }
 
-    .kpi-trend.positive { color: var(--success-color); }
+    .kpi-trend.positive { 
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399; 
+    }
 
     .kpi-chart {
         width: 80px;
@@ -338,7 +372,7 @@
 
     .chart-center-text {
         position: absolute;
-        top: 50%;
+        top: 45%;
         left: 50%;
         transform: translate(-50%, -50%);
         text-align: center;
@@ -353,36 +387,61 @@
     }
 
     .avatar-sm {
-        width: 36px;
-        height: 36px;
-        background: var(--primary-dark);
+        width: 38px;
+        height: 38px;
+        background: var(--primary-gradient);
         color: white;
-        border-radius: 8px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
     }
 
     .btn-icon {
         color: var(--text-muted);
         border: none;
         background: transparent;
+        transition: color 0.2s;
+    }
+
+    .btn-icon:hover {
+        color: white;
     }
 
     .link-sm {
         font-size: 0.85rem;
         text-decoration: none;
         color: var(--primary-light);
+        font-weight: 600;
+        transition: color 0.2s;
+    }
+
+    .link-sm:hover {
+        color: white;
+        text-decoration: underline;
     }
 
     .health-alert {
-        background: rgba(16, 185, 129, 0.1);
-        padding: 0.75rem;
-        border-radius: 8px;
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.15);
+        padding: 0.85rem;
+        border-radius: 10px;
         display: flex;
         align-items: center;
+    }
+
+    .health-item {
+        background: rgba(255, 255, 255, 0.01);
+        border: 1px solid var(--border-color);
+        padding: 1rem;
+        border-radius: 10px;
+    }
+
+    .health-card .progress {
+        background-color: rgba(255, 255, 255, 0.05);
     }
 
     @@media (max-width: 1200px) {

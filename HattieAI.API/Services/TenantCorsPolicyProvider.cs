@@ -36,37 +36,92 @@ namespace HattieAI.API.Services
                 var tenantIdString = tenantProvider.TenantId;
                 if (!string.IsNullOrEmpty(tenantIdString) && Guid.TryParse(tenantIdString, out var tenantGuid))
                 {
-                    // Check cache or DB
-                    // For performance, we should cache this. But for now, direct DB for correctness as per plan.
-                    // We need to use a clean context or careful with tracking if standard pipeline uses it.
-                    // Actually, context.RequestServices gives us the scoped context which is fine.
-                    
                     var tenant = await dbContext.Tenants
                         .IgnoreQueryFilters()
                         .FirstOrDefaultAsync(t => t.Id == tenantGuid);
 
-                    if (tenant != null && tenant.AllowedOrigins != null)
+                    if (tenant != null)
                     {
-                        if (tenant.AllowedOrigins.Count > 0)
+                        var allowedOrigins = tenant.AllowedOrigins ?? new List<string>();
+
+                        // Dynamic matching logic
+                        policyBuilder.SetIsOriginAllowed(origin =>
                         {
-                            policyBuilder.WithOrigins(tenant.AllowedOrigins.ToArray());
-                        }
-                        else 
-                        {
-                           // Fallback: If no origins defined, maybe allow none or all? 
-                           // Usage implies we want to RESTRICT.
-                           // But if list is empty, maybe we block all external?
-                           // Let's allow localhost for dev?
-                           // Or purely block.
-                           // User request: "Work CORS", "Add website list".
-                           // If list empty -> Block.
-                        }
+                            try
+                            {
+                                var originUri = new Uri(origin);
+                                
+                                // 1. Always allow localhost and loopback for local development
+                                if (originUri.IsLoopback || originUri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    return true;
+                                }
+
+                                // 2. If client hasn't configured allowed websites, allow all origins by default
+                                // to ensure onboarding is frictionless and chatbot works initially out-of-the-box.
+                                if (allowedOrigins.Count == 0 || allowedOrigins.Contains("*"))
+                                {
+                                    return true;
+                                }
+
+                                // 3. Match against configured websites flexibly
+                                foreach (var allowed in allowedOrigins)
+                                {
+                                    var cleanedAllowed = allowed.Trim().TrimEnd('/');
+                                    
+                                    // If database entry includes scheme
+                                    if (cleanedAllowed.Contains("://"))
+                                    {
+                                        var allowedUri = new Uri(cleanedAllowed);
+                                        // Match host (e.g. example.com == example.com)
+                                        if (originUri.Host.Equals(allowedUri.Host, StringComparison.OrdinalIgnoreCase))
+                                            return true;
+                                        
+                                        // Match domain ending for subdomain wildcards (e.g. app.example.com ends with .example.com)
+                                        if (originUri.Host.EndsWith("." + allowedUri.Host, StringComparison.OrdinalIgnoreCase))
+                                            return true;
+                                    }
+                                    else
+                                    {
+                                        // If database entry is just domain (e.g. "example.com")
+                                        if (originUri.Host.Equals(cleanedAllowed, StringComparison.OrdinalIgnoreCase) ||
+                                            originUri.Host.EndsWith("." + cleanedAllowed, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                // Fall back to denying on exception
+                            }
+
+                            return false;
+                        });
                     }
                 }
+                else
+                {
+                    // Fallback to allowing localhost when tenantId is not immediately available in preflight
+                    policyBuilder.SetIsOriginAllowed(origin =>
+                    {
+                        try
+                        {
+                            var uri = new Uri(origin);
+                            return uri.IsLoopback || uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase);
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    });
+                }
             }
-            
-            // Allow Localhost for development convenience
-            // policyBuilder.SetIsOriginAllowed(origin => new Uri(origin).IsLoopback);
+            else
+            {
+                policyBuilder.SetIsOriginAllowed(origin => origin.Contains("localhost") || origin.Contains("127.0.0.1"));
+            }
 
             return policyBuilder.Build();
         }

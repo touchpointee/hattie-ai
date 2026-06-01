@@ -127,6 +127,19 @@ namespace HattieAI.Infrastructure.Persistence
             };
 
             modelBuilder.Entity<Language>().HasData(languages);
+
+            // Seed default Admin User
+            var adminUser = new AppUser
+            {
+                Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                Username = "admin",
+                Email = "admin@hattie.ai",
+                PasswordHash = PasswordSecurity.HashPassword("admin123"),
+                Role = "Admin",
+                TenantId = string.Empty,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            };
+            modelBuilder.Entity<AppUser>().HasData(adminUser);
         }
         
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -227,11 +227,17 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
 
         /// <summary>
         /// Simple hash-based embedding for vector search (Groq doesn't have embeddings API).
+<<<<<<< HEAD
         /// For production, consider using a dedicated embedding service.
         /// </summary>
         private Task<float[]> GenerateSimpleEmbeddingAsync(string text)
         {
             // Simple bag-of-words style embedding using hash
+=======
+        /// </summary>
+        private Task<float[]> GenerateSimpleEmbeddingAsync(string text)
+        {
+>>>>>>> 0f289a5 (Completed portal redesign, security upgrades, and dynamic chatbot welcome messages)
             const int dimensions = 768;
             var embedding = new float[dimensions];
             var words = text.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);

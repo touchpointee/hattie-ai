@@ -318,6 +318,7 @@
         if (tenant != null)
         {
             tenant.KnowledgeBaseText = currentKnowledge;
+            await RebuildVectorChunksAsync(context, tenant);
             await context.SaveChangesAsync();
             
             showSuccess = true;
@@ -385,6 +386,7 @@
             else
                 tenant.KnowledgeBaseText += "\n\n" + text;
 
+            await RebuildVectorChunksAsync(context, tenant);
             await context.SaveChangesAsync();
             
             // Refresh the view
@@ -394,5 +396,78 @@
             
             showSuccess = true;
         }
+    }
+
+    private async Task RebuildVectorChunksAsync(HattieDbContext context, Tenant tenant)
+    {
+        // 1. DELETE OLD CHUNKS
+        var oldChunks = await context.KnowledgeChunks
+            .Where(k => k.TenantId == tenant.TenantId)
+            .ToListAsync();
+        context.KnowledgeChunks.RemoveRange(oldChunks);
+
+        // 2. CHUNK AND EMBED NEW TEXT
+        if (!string.IsNullOrEmpty(tenant.KnowledgeBaseText))
+        {
+            var chunks = ChunkText(tenant.KnowledgeBaseText, 500); 
+            foreach (var chunkText in chunks)
+            {
+                var vector = GenerateSimpleEmbedding(chunkText);
+                context.KnowledgeChunks.Add(new KnowledgeChunk
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenant.TenantId,
+                    Content = chunkText,
+                    Embedding = vector,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+    }
+
+    private List<string> ChunkText(string text, int maxChunkSize)
+    {
+        var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var chunks = new List<string>();
+        var currentChunk = "";
+
+        foreach (var line in lines)
+        {
+            if (currentChunk.Length + line.Length > maxChunkSize)
+            {
+                chunks.Add(currentChunk);
+                currentChunk = "";
+            }
+            currentChunk += line + " ";
+        }
+        if (!string.IsNullOrWhiteSpace(currentChunk))
+        {
+            chunks.Add(currentChunk);
+        }
+        return chunks;
+    }
+
+    private float[] GenerateSimpleEmbedding(string text)
+    {
+        const int dimensions = 768;
+        var embedding = new float[dimensions];
+        var words = text.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        
+        foreach (var word in words)
+        {
+            var hash = word.GetHashCode();
+            var index = Math.Abs(hash) % dimensions;
+            embedding[index] += 1.0f;
+        }
+
+        // Normalize
+        var magnitude = (float)Math.Sqrt(embedding.Sum(x => x * x));
+        if (magnitude > 0)
+        {
+            for (int i = 0; i < dimensions; i++)
+                embedding[i] /= magnitude;
+        }
+
+        return embedding;
     }
 }
