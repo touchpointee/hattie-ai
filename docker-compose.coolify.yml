@@ -21,6 +21,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
       - "traefik.http.routers.hattie-api.rule=Host(`hattie-api.touchpointe.digital`)" # Change this if you have a different API domain
       - "traefik.http.services.hattie-api.loadbalancer.server.port=8080"
 
@@ -44,6 +45,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
       - "traefik.http.routers.hattie-portal.rule=Host(`hattie-portal.touchpointe.digital`)"
       - "traefik.http.routers.hattie-portal.entrypoints=websecure"
       - "traefik.http.routers.hattie-portal.tls=true"
