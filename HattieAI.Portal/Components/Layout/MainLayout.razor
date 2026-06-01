@@ -419,9 +419,8 @@
 
     private async Task Logout()
     {
-        var customAuthStateProvider = (CustomAuthStateProvider)AuthStateProvider;
-        await customAuthStateProvider.UpdateAuthenticationState(null);
-        NavManager.NavigateTo("/login");
+        await Task.CompletedTask;
+        NavManager.NavigateTo("/auth/logout", forceLoad: true);
     }
 
     protected override void OnAfterRender(bool firstRender)

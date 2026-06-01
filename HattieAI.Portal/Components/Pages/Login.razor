@@ -1,12 +1,7 @@
 @page "/login"
-@using HattieAI.Portal.Auth
 @using HattieAI.Portal.Components.Layout
-@using HattieAI.Infrastructure.Persistence
-@using Microsoft.EntityFrameworkCore
 @layout LoginLayout
-@inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager NavManager
-@inject IDbContextFactory<HattieDbContext> DbFactory
 @rendermode InteractiveServer
 
 <div class="login-shell">
@@ -48,19 +43,19 @@
                 </span>
             </div>
 
-            <EditForm Model="@loginModel" OnSubmit="Authenticate" class="login-form">
+            <form method="post" action="/auth/login" class="login-form">
                 <div class="form-group">
                     <label>Username or Email</label>
                     <div class="input-shell">
                         <i class="bi bi-person"></i>
-                        <InputText class="form-control" @bind-Value="loginModel.UserNameOrEmail" placeholder="admin or admin@hattie.ai" autocomplete="username" />
+                        <input class="form-control" name="UserNameOrEmail" placeholder="Username or email" autocomplete="username" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Password</label>
                     <div class="input-shell">
                         <i class="bi bi-lock"></i>
-                        <InputText type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Enter password" autocomplete="current-password" />
+                        <input type="password" class="form-control" name="Password" placeholder="Password" autocomplete="current-password" />
                     </div>
                 </div>
 
@@ -71,22 +66,15 @@
                     </div>
                 }
 
-                <button type="submit" class="btn btn-primary w-100 login-button" disabled="@isProcessing">
-                    @if (isProcessing)
-                    {
-                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                    }
-                    else
-                    {
-                        <i class="bi bi-box-arrow-in-right me-2"></i>
-                    }
-                    <span>@(isProcessing ? "Signing in..." : "Sign in")</span>
+                <button type="submit" class="btn btn-primary w-100 login-button">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    <span>Sign in</span>
                 </button>
-            </EditForm>
+            </form>
 
             <div class="login-footer">
-                <span>Default admin</span>
-                <strong>admin / admin</strong>
+                <span>Session duration</span>
+                <strong>30 days</strong>
             </div>
         </div>
     </section>
@@ -328,57 +316,21 @@
 </style>
 
 @code {
-    private LoginModel loginModel = new();
     private string errorMessage = "";
-    private bool isProcessing;
 
-    private async Task Authenticate()
+    protected override void OnInitialized()
     {
-        if (isProcessing) return;
-
-        if (string.IsNullOrWhiteSpace(loginModel.UserNameOrEmail) || string.IsNullOrWhiteSpace(loginModel.Password))
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (!query.TryGetValue("error", out var error))
         {
-            errorMessage = "Please enter both username and password.";
             return;
         }
 
-        isProcessing = true;
-        errorMessage = "";
-
-        try
+        errorMessage = error.ToString() switch
         {
-            using var context = DbFactory.CreateDbContext();
-            var login = loginModel.UserNameOrEmail.Trim().ToLowerInvariant();
-            
-            var user = await context.AppUsers
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(u => u.Username.ToLower() == login || u.Email.ToLower() == login);
-
-            if (user != null && PasswordSecurity.VerifyPassword(loginModel.Password, user.PasswordHash))
-            {
-                var userSession = new UserSession { UserName = user.Username, Role = user.Role };
-                await AuthStateProvider.UpdateAuthenticationState(userSession);
-                NavManager.NavigateTo("/");
-            }
-            else
-            {
-                errorMessage = "Invalid username or password. Please try again.";
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine(ex);
-            errorMessage = "Authentication failed. Please check the database connection and try again.";
-        }
-        finally
-        {
-            isProcessing = false;
-        }
-    }
-
-    private sealed class LoginModel
-    {
-        public string UserNameOrEmail { get; set; } = "";
-        public string Password { get; set; } = "";
+            "missing" => "Please enter both username and password.",
+            _ => "Invalid username or password. Please try again."
+        };
     }
 }

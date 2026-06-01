@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using HattieAI.Portal.Auth;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,13 +18,19 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddCircuitOptions(options => options.DetailedErrors = true);
 
-builder.Services.AddAuthenticationCore();
-builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/login";
-        options.ExpireTimeSpan = TimeSpan.FromHours(48);
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.SlidingExpiration = true;
+        options.Cookie.Name = "Hattie.Portal.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
+builder.Services.AddAuthorization();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ProtectedLocalStorage>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddScoped<CustomAuthStateProvider>(provider => (CustomAuthStateProvider)provider.GetRequiredService<AuthenticationStateProvider>());
@@ -94,6 +103,49 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+
+app.MapPost("/auth/login", async (HttpContext httpContext, HattieDbContext context) =>
+{
+    var form = await httpContext.Request.ReadFormAsync();
+    var login = form["UserNameOrEmail"].ToString().Trim().ToLowerInvariant();
+    var password = form["Password"].ToString();
+
+    if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
+        return Results.Redirect("/login?error=missing");
+
+    var user = await context.AppUsers
+        .IgnoreQueryFilters()
+        .FirstOrDefaultAsync(u => u.Username.ToLower() == login || u.Email.ToLower() == login);
+
+    if (user == null || !PasswordSecurity.VerifyPassword(password, user.PasswordHash))
+        return Results.Redirect("/login?error=invalid");
+
+    var claims = new List<Claim>
+    {
+        new(ClaimTypes.Name, user.Username),
+        new(ClaimTypes.Role, user.Role)
+    };
+    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    var principal = new ClaimsPrincipal(identity);
+
+    await httpContext.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        principal,
+        new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30),
+            AllowRefresh = true
+        });
+
+    return Results.Redirect("/");
+}).DisableAntiforgery();
+
+app.MapGet("/auth/logout", async (HttpContext httpContext) =>
+{
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Redirect("/login");
+});
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

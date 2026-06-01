@@ -1,22 +1,32 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.Http;
 
 namespace HattieAI.Portal.Auth
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         private readonly ProtectedLocalStorage _localStorage;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
         private ClaimsPrincipal? _currentUser;
 
-        public CustomAuthStateProvider(ProtectedLocalStorage localStorage)
+        public CustomAuthStateProvider(ProtectedLocalStorage localStorage, IHttpContextAccessor httpContextAccessor)
         {
             _localStorage = localStorage;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
+            var httpUser = _httpContextAccessor.HttpContext?.User;
+            if (httpUser?.Identity?.IsAuthenticated == true)
+            {
+                _currentUser = httpUser;
+                return new AuthenticationState(httpUser);
+            }
+
             if (_currentUser?.Identity?.IsAuthenticated == true)
                 return new AuthenticationState(_currentUser);
 
@@ -28,7 +38,6 @@ namespace HattieAI.Portal.Auth
                 if (userSession == null)
                     return await Task.FromResult(new AuthenticationState(_anonymous));
 
-                // Check for expiration
                 if (userSession.ExpiryTime < DateTime.Now)
                 {
                     await _localStorage.DeleteAsync("UserSession");
@@ -56,8 +65,7 @@ namespace HattieAI.Portal.Auth
 
             if (userSession != null)
             {
-                // Set expiration to 48 hours from now
-                userSession.ExpiryTime = DateTime.Now.AddHours(48);
+                userSession.ExpiryTime = DateTime.Now.AddDays(30);
                 await _localStorage.SetAsync("UserSession", userSession);
                 
                 claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
