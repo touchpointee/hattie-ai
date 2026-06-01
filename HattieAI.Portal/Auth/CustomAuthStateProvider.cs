@@ -45,7 +45,7 @@ namespace HattieAI.Portal.Auth
             }
         }
 
-        public async Task UpdateAuthenticationState(UserSession userSession)
+        public async Task UpdateAuthenticationState(UserSession? userSession)
         {
             ClaimsPrincipal claimsPrincipal;
 
@@ -73,8 +73,8 @@ namespace HattieAI.Portal.Auth
 
     public class UserSession
     {
-        public string UserName { get; set; }
-        public string Role { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
         public DateTime ExpiryTime { get; set; }
     }
 }

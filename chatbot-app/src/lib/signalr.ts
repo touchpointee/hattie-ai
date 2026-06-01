@@ -7,10 +7,10 @@ export class SignalRService {
     constructor(tenantId: string, language: string = 'en') {
 
         // Check for custom API URL in window.HattieAI config, otherwise use environment value
-        const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL;
+        const apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || window.location.origin;
 
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl(`${apiUrl}/hattieHub?tenantId=${tenantId}&language=${language}`)
+            .withUrl(`${apiUrl}/hattieHub?tenantId=${encodeURIComponent(tenantId)}&language=${encodeURIComponent(language)}`)
             .withAutomaticReconnect()
             .build();
 

@@ -7,8 +7,6 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HattieAI.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace HattieAI.API.Hubs
 {
@@ -62,16 +60,18 @@ namespace HattieAI.API.Hubs
                 {
                     // Fetch all chunks for this tenant (In-Memory Search for now)
                     var chunks = await _dbContext.KnowledgeChunks
+                                        .IgnoreQueryFilters()
                                         .Where(k => k.TenantId == tenantIdString)
                                         .ToListAsync();
                 
                     if (chunks.Any())
                     {
                         var scoredChunks = chunks
+                            .Where(c => c.Embedding != null && c.Embedding.Length == queryEmbedding.Length)
                             .Select(c => new 
                             { 
                                 Chunk = c, 
-                                Score = CosineSimilarity(c.Embedding, queryEmbedding) 
+                                Score = CosineSimilarity(c.Embedding!, queryEmbedding) 
                             })
                             .OrderByDescending(x => x.Score)
                             .Take(3)
@@ -130,17 +130,20 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                 }
                 else
                 {
-                    session = await _dbContext.ChatSessions.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == chatSessionId);
-                    if (session == null)
+                    var existingSession = await _dbContext.ChatSessions.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == chatSessionId.Value);
+                    if (existingSession == null)
                     {
                         await Clients.Caller.SendAsync("ReceiveError", "Session not found.");
                         return;
                     }
+
+                    session = existingSession;
                 }
 
                 // 4. Fetch History (Before saving current message to avoid duplication in prompt)
                 // Limit to last 5 messages to reduce token costs
                 var historyMessages = await _dbContext.ChatMessages
+                    .IgnoreQueryFilters()
                     .Where(m => m.ChatSessionId == session.Id)
                     .OrderByDescending(m => m.CreatedAt)
                     .Take(5)
@@ -227,17 +230,11 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
 
         /// <summary>
         /// Simple hash-based embedding for vector search (Groq doesn't have embeddings API).
-<<<<<<< HEAD
         /// For production, consider using a dedicated embedding service.
         /// </summary>
         private Task<float[]> GenerateSimpleEmbeddingAsync(string text)
         {
             // Simple bag-of-words style embedding using hash
-=======
-        /// </summary>
-        private Task<float[]> GenerateSimpleEmbeddingAsync(string text)
-        {
->>>>>>> 0f289a5 (Completed portal redesign, security upgrades, and dynamic chatbot welcome messages)
             const int dimensions = 768;
             var embedding = new float[dimensions];
             var words = text.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);

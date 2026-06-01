@@ -18,14 +18,14 @@
         <p class="text-muted">Sign in to access your dashboard</p>
     </div>
 
-    <div class="login-form">
+    <EditForm Model="@loginModel" OnSubmit="Authenticate" class="login-form">
         <div class="form-group">
-            <label>Username</label>
-            <input class="form-control" @bind="username" placeholder="Enter your username" />
+            <label>Username or Email</label>
+            <InputText class="form-control" @bind-Value="loginModel.UserNameOrEmail" placeholder="admin@example.com" autocomplete="username" />
         </div>
         <div class="form-group">
             <label>Password</label>
-            <input type="password" class="form-control" @bind="password" placeholder="Enter your password" />
+            <InputText type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Enter your password" autocomplete="current-password" />
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
@@ -35,10 +35,14 @@
             </div>
         }
 
-        <button class="btn btn-primary w-100" @onclick="Authenticate">
-            <span>Sign In</span>
+        <button type="submit" class="btn btn-primary w-100" disabled="@isProcessing">
+            @if (isProcessing)
+            {
+                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            }
+            <span>@(isProcessing ? "Signing in..." : "Sign In")</span>
         </button>
-    </div>
+    </EditForm>
     
     <div class="login-footer">
         <p>Powered by <strong>Hattie AI</strong></p>
@@ -109,31 +113,37 @@
 </style>
 
 @code {
-    private string username = "";
-    private string password = "";
+    private LoginModel loginModel = new();
     private string errorMessage = "";
+    private bool isProcessing;
 
     private async Task Authenticate()
     {
-        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        if (isProcessing) return;
+
+        if (string.IsNullOrWhiteSpace(loginModel.UserNameOrEmail) || string.IsNullOrWhiteSpace(loginModel.Password))
         {
             errorMessage = "Please enter both username and password.";
             return;
         }
 
+        isProcessing = true;
+        errorMessage = "";
+
         try
         {
             using var context = DbFactory.CreateDbContext();
+            var login = loginModel.UserNameOrEmail.Trim().ToLowerInvariant();
             
             var user = await context.AppUsers
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == login || u.Email.ToLower() == login);
 
-            if (user != null && PasswordSecurity.VerifyPassword(password, user.PasswordHash))
+            if (user != null && PasswordSecurity.VerifyPassword(loginModel.Password, user.PasswordHash))
             {
                 var userSession = new UserSession { UserName = user.Username, Role = user.Role };
                 await AuthStateProvider.UpdateAuthenticationState(userSession);
-                NavManager.NavigateTo("/");
+                NavManager.NavigateTo("/", forceLoad: true);
             }
             else
             {
@@ -142,7 +152,18 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Authentication failed: {ex.Message}";
+            Console.Error.WriteLine(ex);
+            errorMessage = "Authentication failed. Please check the database connection and try again.";
         }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private sealed class LoginModel
+    {
+        public string UserNameOrEmail { get; set; } = "";
+        public string Password { get; set; } = "";
     }
 }

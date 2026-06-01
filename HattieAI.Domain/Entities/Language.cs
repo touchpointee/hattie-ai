@@ -6,11 +6,11 @@ namespace HattieAI.Domain.Entities
     {
         [Key]
         [MaxLength(50)]
-        public string Code { get; set; } // ISO code, e.g., "en", "fr-FR"
+        public string Code { get; set; } = string.Empty; // ISO code, e.g., "en", "fr-FR"
 
         [Required]
         [MaxLength(200)]
-        public string Name { get; set; } // Display name, e.g., "English", "French"
+        public string Name { get; set; } = string.Empty; // Display name, e.g., "English", "French"
 
         public ICollection<Tenant> Tenants { get; set; } = new List<Tenant>();
     }

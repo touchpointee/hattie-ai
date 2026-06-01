@@ -101,5 +101,5 @@ app.Run();
 
 public class AdminTenantProvider : ITenantProvider
 {
-    public string TenantId => null; // Indicates no specific tenant filter, or we need to handle this in DbContext
+    public string TenantId => string.Empty;
 }

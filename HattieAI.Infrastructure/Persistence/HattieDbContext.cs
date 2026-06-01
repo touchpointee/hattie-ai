@@ -20,25 +20,10 @@ namespace HattieAI.Infrastructure.Persistence
             set => _currentTenantId = value; 
         }
 
-        public HattieDbContext(DbContextOptions<HattieDbContext> options) : base(options)
+        public HattieDbContext(DbContextOptions<HattieDbContext> options, ITenantProvider? tenantProvider = null) : base(options)
         {
-            // In a real app, this would be injected via a scoped service (ITenantProvider)
-            // For now, we might need a way to set this. 
-            // We'll assume it's passed or set via a service.
-            // For simplicity in this scaffold, we'll leave it empty and rely on manual setting or DI.
+            _currentTenantId = tenantProvider?.TenantId ?? string.Empty;
         }
-
-        // Constructor for DI with Tenant Provider if we had one. 
-        // For now, let's add a property to set it, or rely on a service locator pattern if strictly needed, 
-        // but better to inject a service. 
-        // Let's assume we have an ITenantProvider.
-        
-        /*
-        public HattieDbContext(DbContextOptions<HattieDbContext> options, ITenantProvider tenantProvider = null) : base(options)
-        {
-            _currentTenantId = tenantProvider?.TenantId;
-        }
-        */
 
         public DbSet<Tenant> Tenants { get; set; } = null!;
         public DbSet<AppUser> AppUsers { get; set; } = null!;

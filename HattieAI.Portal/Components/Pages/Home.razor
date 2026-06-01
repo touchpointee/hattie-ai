@@ -32,7 +32,7 @@
                 <span class="kpi-label">Total Clients</span>
                 <div class="kpi-value-row">
                     <span class="kpi-value">@totalClients</span>
-                    <span class="kpi-trend positive"><i class="bi bi-arrow-up"></i> 12%</span>
+                    <span class="kpi-trend neutral">@clientsLast30Days new</span>
                 </div>
             </div>
             <div class="kpi-chart">
@@ -45,7 +45,7 @@
                 <span class="kpi-label">Active Sessions</span>
                 <div class="kpi-value-row">
                     <span class="kpi-value">@totalSessions</span>
-                    <span class="kpi-trend positive"><i class="bi bi-arrow-up"></i> 8%</span>
+                    <span class="kpi-trend neutral">@sessionsLast30Days recent</span>
                 </div>
             </div>
             <div class="kpi-chart">
@@ -58,7 +58,7 @@
                 <span class="kpi-label">Processed Messages</span>
                 <div class="kpi-value-row">
                     <span class="kpi-value">@totalMessages</span>
-                    <span class="kpi-trend positive"><i class="bi bi-arrow-up"></i> 24%</span>
+                    <span class="kpi-trend neutral">@messagesLast30Days recent</span>
                 </div>
             </div>
             <div class="kpi-chart">
@@ -68,10 +68,10 @@
 
         <div class="kpi-card">
             <div class="kpi-content">
-                <span class="kpi-label">Avg Response</span>
+                <span class="kpi-label">Knowledge Coverage</span>
                 <div class="kpi-value-row">
-                    <span class="kpi-value">1.4s</span>
-                    <span class="kpi-trend positive"><i class="bi bi-arrow-down"></i> 0.2s</span>
+                    <span class="kpi-value">@knowledgeCoverage%</span>
+                    <span class="kpi-trend neutral">@clientsWithKnowledge of @totalClients</span>
                 </div>
             </div>
             <div class="kpi-chart">
@@ -104,8 +104,8 @@
             <div class="card-body chart-body relative">
                 <canvas id="usageChart"></canvas>
                 <div class="chart-center-text">
-                    <span class="h4 fw-bold mb-0">100%</span>
-                    <small class="text-muted">Total</small>
+                    <span class="h4 fw-bold mb-0">@totalMessages</span>
+                    <small class="text-muted">Messages</small>
                 </div>
             </div>
         </div>
@@ -172,45 +172,45 @@
             </div>
         </div>
 
-        <!-- System Health -->
+        <!-- Configuration Health -->
         <div class="card health-card">
             <div class="card-header">
-                <h3>System Health</h3>
+                <h3>Configuration Health</h3>
             </div>
             <div class="card-body">
                 <div class="health-item">
                     <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted small">API Latency</span>
-                        <span class="fw-bold small">45ms</span>
+                        <span class="text-muted small">Clients with Knowledge</span>
+                        <span class="fw-bold small">@knowledgeCoverage%</span>
                     </div>
                     <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-success" style="width: 15%"></div>
+                        <div class="progress-bar bg-success" style="width: @knowledgeCoverage%"></div>
                     </div>
                 </div>
                 
                 <div class="health-item mt-4">
                     <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted small">Database Load</span>
-                        <span class="fw-bold small">12%</span>
+                        <span class="text-muted small">Clients with Websites</span>
+                        <span class="fw-bold small">@originCoverage%</span>
                     </div>
                     <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-primary" style="width: 12%"></div>
+                        <div class="progress-bar bg-primary" style="width: @originCoverage%"></div>
                     </div>
                 </div>
 
                 <div class="health-item mt-4">
                     <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted small">AI Token Usage</span>
-                        <span class="fw-bold small">84%</span>
+                        <span class="text-muted small">Language Configured</span>
+                        <span class="fw-bold small">@languageCoverage%</span>
                     </div>
                     <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-warning" style="width: 84%"></div>
+                        <div class="progress-bar bg-warning" style="width: @languageCoverage%"></div>
                     </div>
                 </div>
 
                 <div class="health-alert mt-4">
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    <span class="small text-muted">All systems operational</span>
+                    <i class="bi bi-info-circle-fill text-info me-2"></i>
+                    <span class="small text-muted">@configurationSummary</span>
                 </div>
             </div>
         </div>
@@ -346,6 +346,11 @@
         color: #34d399; 
     }
 
+    .kpi-trend.neutral {
+        background: rgba(6, 182, 212, 0.12);
+        color: #67e8f9;
+    }
+
     .kpi-chart {
         width: 80px;
         height: 40px;
@@ -460,7 +465,15 @@
     private int totalSessions;
     private int totalMessages;
     private int clientsWithKnowledge;
-    private double avgResponse = 1.2; // Placeholder until we have timestamps for response
+    private int clientsLast30Days;
+    private int sessionsLast30Days;
+    private int messagesLast30Days;
+    private int clientsWithOrigins;
+    private int clientsWithLanguages;
+    private int knowledgeCoverage;
+    private int originCoverage;
+    private int languageCoverage;
+    private string configurationSummary = "Configuration data is loading.";
     private string userName = "Admin";
     private List<Tenant> recentClients = new();
 
@@ -480,10 +493,27 @@
         totalClients = await queryableTenants.CountAsync();
         totalSessions = await queryableSessions.CountAsync();
         totalMessages = await queryableMessages.CountAsync();
+
+        var last30Days = DateTime.UtcNow.AddDays(-30);
+        clientsLast30Days = await queryableTenants.CountAsync(t => t.CreatedAt >= last30Days);
+        sessionsLast30Days = await queryableSessions.CountAsync(s => s.CreatedAt >= last30Days);
+        messagesLast30Days = await queryableMessages.CountAsync(m => m.CreatedAt >= last30Days);
         
         clientsWithKnowledge = await queryableTenants
             .Where(t => !string.IsNullOrEmpty(t.KnowledgeBaseText))
             .CountAsync();
+        clientsWithOrigins = await queryableTenants.CountAsync(t => t.AllowedOrigins.Count > 0);
+        clientsWithLanguages = await context.Tenants
+            .IgnoreQueryFilters()
+            .Include(t => t.SupportedLanguages)
+            .CountAsync(t => t.SupportedLanguages.Any());
+
+        knowledgeCoverage = Percent(clientsWithKnowledge, totalClients);
+        originCoverage = Percent(clientsWithOrigins, totalClients);
+        languageCoverage = Percent(clientsWithLanguages, totalClients);
+        configurationSummary = totalClients == 0
+            ? "No clients have been onboarded yet."
+            : $"{clientsWithKnowledge} knowledge bases, {clientsWithOrigins} website allowlists, {clientsWithLanguages} language profiles configured.";
 
         recentClients = await queryableTenants
             .OrderByDescending(t => t.CreatedAt)
@@ -561,12 +591,18 @@
                 await JSRuntime.InvokeVoidAsync("window.dashboardChart.renderSparkline", "spark1", clientSpark, "#3730a3"); // Client Growth
                 await JSRuntime.InvokeVoidAsync("window.dashboardChart.renderSparkline", "spark2", sessionData, "#6366f1"); // Sessions
                 await JSRuntime.InvokeVoidAsync("window.dashboardChart.renderSparkline", "spark3", messageData, "#10b981"); // Messages
-                await JSRuntime.InvokeVoidAsync("window.dashboardChart.renderSparkline", "spark4", new[] { 12, 11, 10, 12, 13, 11, 12 }, "#f59e0b"); // Dummy latency for now
+                await JSRuntime.InvokeVoidAsync("window.dashboardChart.renderSparkline", "spark4", clientSpark, "#f59e0b");
             }
             catch (Exception ex)
             {
                Console.WriteLine($"Error rendering charts: {ex.Message}");
             }
         }
+    }
+
+    private static int Percent(int value, int total)
+    {
+        if (total <= 0) return 0;
+        return (int)Math.Round(value * 100d / total);
     }
 }

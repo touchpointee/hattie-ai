@@ -35,6 +35,7 @@ services:
     environment:
       - 'ConnectionStrings__DefaultConnection=${CONNECTION_STRING}'
       - 'Gemini__ApiKey=${GEMINI_API_KEY}'
+      - 'Chatbot__PublicUrl=${CHATBOT_PUBLIC_URL}'
       - 'ApiSettings__BaseUrl=http://hattie-api:8080'
       - 'ASPNETCORE_URLS=http://+:8080'
     depends_on:

@@ -1,47 +1,72 @@
-﻿<div class="nav-scrollable">
+<div class="nav-scrollable">
     <nav class="flex-column">
-        <div class="nav-item px-3">
+        <div class="nav-section">Workspace</div>
+        <div class="nav-item">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <i class="bi bi-speedometer2"></i>
                 <span class="nav-text">Dashboard</span>
             </NavLink>
         </div>
-        <div class="nav-item px-3">
+        <div class="nav-item">
             <NavLink class="nav-link" href="clients">
                 <i class="bi bi-people"></i>
                 <span class="nav-text">Clients</span>
             </NavLink>
         </div>
-        <div class="nav-item px-3">
+
+        <div class="nav-section">Operations</div>
+        <div class="nav-item">
             <NavLink class="nav-link" href="knowledge-base">
                 <i class="bi bi-book"></i>
                 <span class="nav-text">Knowledge Base</span>
             </NavLink>
         </div>
-        <div class="nav-item px-3">
+        <div class="nav-item">
             <NavLink class="nav-link" href="client-configuration">
                 <i class="bi bi-gear"></i>
-                <span class="nav-text">Client Config</span>
+                <span class="nav-text">Configuration</span>
+            </NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="documentation">
+                <i class="bi bi-file-earmark-text"></i>
+                <span class="nav-text">Documentation</span>
             </NavLink>
         </div>
     </nav>
 </div>
 
 <style>
+    .nav-scrollable {
+        padding: 1rem;
+    }
+
+    .nav-section {
+        color: rgba(255, 255, 255, 0.42);
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        margin: 1.1rem 0 0.45rem;
+        text-transform: uppercase;
+    }
+
+    .nav-section:first-child {
+        margin-top: 0;
+    }
 
     .nav-link {
-        color: rgba(255, 255, 255, 0.7);
-        padding: 0.8rem 1rem;
+        color: rgba(255, 255, 255, 0.72);
+        padding: 0.72rem 0.85rem;
         border-radius: 8px;
-        transition: all 0.2s ease;
+        transition: background-color 0.2s ease, color 0.2s ease;
         display: flex;
         align-items: center;
-        gap: 1rem;
-        font-weight: 500;
-        font-size: 0.95rem;
+        gap: 0.8rem;
+        font-weight: 700;
+        font-size: 0.92rem;
         line-height: 1.5;
         margin-bottom: 0.25rem;
-        white-space: nowrap; /* Prevent wrapping */
+        white-space: nowrap;
     }
 
     .nav-link:hover {
@@ -51,29 +76,23 @@
 
     .nav-link.active {
         color: #ffffff;
-        background-color: var(--primary-light);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        font-weight: 600;
+        background-color: #2563eb;
+        font-weight: 800;
     }
 
     .nav-link i {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         display: flex;
         align-items: center;
         justify-content: center;
         width: 24px;
         height: 24px;
         flex-shrink: 0;
-        line-height: 0; /* Important for icons */
+        line-height: 0;
     }
 
     .nav-text {
         position: relative;
-        top: 1px; /* Visual baseline correction */
-    }
-    
-    .nav-link:hover i,
-    .nav-link.active i {
-        opacity: 1;
+        top: 1px;
     }
 </style>

@@ -1,100 +1,182 @@
 @page "/client-configuration"
-@using System
 @using HattieAI.Domain.Entities
 @using HattieAI.Infrastructure.Persistence
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
 @inject IDbContextFactory<HattieDbContext> DbFactory
-@inject NavigationManager NavManager
 @rendermode InteractiveServer
 
-<div class="page-header">
-    <h1 class="page-title">Client Configuration</h1>
-    <p class="text-muted">Configure supported languages for each client.</p>
-</div>
+<PageTitle>Configuration | Hattie AI</PageTitle>
 
-<div class="config-container">
+<div class="portal-page">
+    <div class="page-heading">
+        <div>
+            <h1>Configuration</h1>
+            <p>Control each chatbot's supported languages and approved website origins.</p>
+        </div>
+        <div class="heading-actions">
+            <span class="metric-pill">@tenants.Count clients</span>
+            <span class="metric-pill">@allLanguages.Count languages</span>
+        </div>
+    </div>
+
     @if (isLoading)
     {
-        <div class="loading-spinner">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
+        <div class="state-panel">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span>Loading configuration data...</span>
+        </div>
+    }
+    else if (!tenants.Any())
+    {
+        <div class="state-panel">
+            <i class="bi bi-people"></i>
+            <strong>No clients yet</strong>
+            <span>Create a client before configuring chatbot languages or website access.</span>
+            <a href="clients" class="btn btn-primary mt-2">Create Client</a>
         </div>
     }
     else
     {
-        <div class="card">
-            <div class="card-body">
-                <div class="form-group mb-4">
-                    <label class="form-label">Select Client</label>
-                    <select class="form-select" @onchange="OnClientSelected">
-                        <option value="">-- Select a Client --</option>
-                        @foreach (var tenant in tenants)
-                        {
-                            <option value="@tenant.Id">@tenant.Name</option>
-                        }
-                    </select>
+        <div class="config-layout">
+            <aside class="client-panel">
+                <div class="panel-header">
+                    <span>Clients</span>
+                    <small>@configuredClientCount configured</small>
                 </div>
 
-                @if (selectedTenant != null)
+                <div class="client-search">
+                    <i class="bi bi-search"></i>
+                    <input type="search" placeholder="Search clients" @bind="clientSearch" @bind:event="oninput" />
+                </div>
+
+                <div class="client-list">
+                    @foreach (var tenant in FilteredTenants)
+                    {
+                        <button class="client-row @(selectedTenant?.Id == tenant.Id ? "active" : "")" @onclick="() => SelectTenant(tenant.Id)">
+                            <span class="client-avatar">@GetInitial(tenant.Name)</span>
+                            <span class="client-copy">
+                                <strong>@tenant.Name</strong>
+                                <small>@GetTenantStatus(tenant)</small>
+                            </span>
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    }
+                </div>
+            </aside>
+
+            <section class="config-panel">
+                @if (selectedTenant == null)
                 {
-                    <div class="language-selection">
-                        <h4 class="section-title">Supported Languages</h4>
-                        <p class="text-sm text-muted mb-3">Select the languages available for this client's chatbot.</p>
+                    <div class="state-panel embedded">
+                        <i class="bi bi-sliders"></i>
+                        <strong>Select a client</strong>
+                        <span>Choose a client to manage languages and allowed websites.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="config-header">
+                        <div>
+                            <h2>@selectedTenant.Name</h2>
+                            <p>@selectedTenant.ContactEmail</p>
+                        </div>
+                        <button class="btn btn-primary" @onclick="SaveConfiguration" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                            }
+                            <span>@(isSaving ? "Saving..." : "Save Changes")</span>
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(successMessage))
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>@successMessage
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                        </div>
+                    }
+
+                    <div class="setup-summary">
+                        <div>
+                            <span>Languages</span>
+                            <strong>@selectedLanguageCodes.Count</strong>
+                        </div>
+                        <div>
+                            <span>Allowed Websites</span>
+                            <strong>@allowedOrigins.Count</strong>
+                        </div>
+                        <div>
+                            <span>Knowledge</span>
+                            <strong>@(string.IsNullOrWhiteSpace(selectedTenant.KnowledgeBaseText) ? "Missing" : "Ready")</strong>
+                        </div>
+                    </div>
+
+                    <div class="config-section">
+                        <div class="section-header">
+                            <div>
+                                <h3>Supported Languages</h3>
+                                <p>Visitors can switch only between selected languages in the chatbot.</p>
+                            </div>
+                            <div class="section-actions">
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="SelectCoreLanguages">Core</button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="SelectAllLanguages">All</button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="ClearLanguages">Clear</button>
+                            </div>
+                        </div>
+
+                        <div class="field-with-icon">
+                            <i class="bi bi-search"></i>
+                            <input type="search" placeholder="Search language or code" @bind="languageSearch" @bind:event="oninput" />
+                        </div>
 
                         <div class="language-grid">
-                            @foreach (var language in allLanguages)
+                            @foreach (var language in FilteredLanguages)
                             {
-                                <div class="language-item @(IsLanguageSelected(language.Code) ? "selected" : "")" 
-                                     @onclick="() => ToggleLanguage(language.Code)">
-                                    <div class="checkbox-custom">
+                                <button class="language-tile @(IsLanguageSelected(language.Code) ? "selected" : "")" @onclick="() => ToggleLanguage(language.Code)">
+                                    <span class="check-box">
                                         @if (IsLanguageSelected(language.Code))
                                         {
                                             <i class="bi bi-check-lg"></i>
                                         }
-                                    </div>
-                                    <span class="lang-name">@language.Name</span>
-                                    <span class="lang-code">@language.Code</span>
-                                </div>
-                            }
-                        </div>
-
-                        <div class="actions mt-4">
-                            <button class="btn btn-primary" @onclick="SaveConfiguration" disabled="@isSaving">
-                                @if (isSaving)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                    <span>Saving...</span>
-                                }
-                                else
-                                {
-                                    <span>Save Configuration</span>
-                                }
-                            </button>
-                            @if (!string.IsNullOrEmpty(successMessage))
-                            {
-                                <span class="text-success ms-3"><i class="bi bi-check-circle-fill me-1"></i> @successMessage</span>
+                                    </span>
+                                    <span class="language-name">@language.Name</span>
+                                    <span class="language-code">@language.Code</span>
+                                </button>
                             }
                         </div>
                     </div>
-                    
-                    <div class="origins-config mt-5">
-                        <h4 class="section-title">Allowed Websites (CORS)</h4>
-                        <p class="text-sm text-muted mb-3">Add the specific website URLs where the chatbot will be embedded (e.g., https://example.com). This secures the connection.</p>
-                        
-                        <div class="input-group mb-3" style="max-width: 500px;">
-                            <input type="text" class="form-control" placeholder="https://yourwebsite.com" @bind="newOriginUrl" @bind:event="oninput" @onkeypress="HandleEnterKey" />
-                            <button class="btn btn-outline-primary" type="button" @onclick="AddOrigin">Add Website</button>
+
+                    <div class="config-section">
+                        <div class="section-header">
+                            <div>
+                                <h3>Allowed Websites</h3>
+                                <p>Add exact origins where the chatbot script is allowed to connect.</p>
+                            </div>
                         </div>
-                        
-                        @if (allowedOrigins.Count > 0)
+
+                        <div class="origin-input-row">
+                            <input class="form-control" placeholder="https://example.com" @bind="newOriginUrl" @bind:event="oninput" @onkeydown="HandleOriginKeyDown" />
+                            <button class="btn btn-outline-primary" type="button" @onclick="AddOrigin">Add</button>
+                        </div>
+
+                        @if (allowedOrigins.Any())
                         {
-                            <div class="list-group" style="max-width: 500px;">
+                            <div class="origin-list">
                                 @foreach (var origin in allowedOrigins)
                                 {
-                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="origin-item">
+                                        <i class="bi bi-globe2"></i>
                                         <span>@origin</span>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveOrigin(origin)">
+                                        <button class="btn-icon-danger" @onclick="() => RemoveOrigin(origin)" title="Remove origin">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -103,96 +185,345 @@
                         }
                         else
                         {
-                            <div class="alert alert-warning" style="max-width: 500px;">
-                                <i class="bi bi-exclamation-triangle me-2"></i> No websites configured. The chatbot may not work externally.
+                            <div class="inline-empty">
+                                <i class="bi bi-exclamation-circle"></i>
+                                No websites added. Add the production website before going live.
                             </div>
                         }
                     </div>
                 }
-            </div>
+            </section>
         </div>
     }
 </div>
 
 <style>
-    .page-header {
-        margin-bottom: 2rem;
+    .config-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+        gap: 1.25rem;
+        align-items: start;
     }
 
-    .config-container {
-        max-width: 1200px;
-    }
-
-    .card {
+    .client-panel,
+    .config-panel {
         background: var(--surface-color);
         border: 1px solid var(--border-color);
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         box-shadow: var(--shadow-sm);
     }
 
-    .card-body {
-        padding: 2rem;
+    .client-panel {
+        position: sticky;
+        top: 0;
+        overflow: hidden;
+    }
+
+    .panel-header,
+    .config-header,
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .panel-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 800;
+    }
+
+    .panel-header small,
+    .section-header p,
+    .config-header p {
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .client-search,
+    .field-with-icon {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: #f8fafc;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin: 1rem;
+        padding: 0.65rem 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .client-search input,
+    .field-with-icon input {
+        border: 0;
+        background: transparent;
+        outline: 0;
+        width: 100%;
+        color: var(--text-color);
+    }
+
+    .field-with-icon {
+        margin: 0 0 1rem;
+    }
+
+    .client-list {
+        max-height: calc(100vh - 260px);
+        overflow-y: auto;
+        padding: 0 0.6rem 0.6rem;
+    }
+
+    .client-row {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        display: grid;
+        grid-template-columns: 38px 1fr 16px;
+        gap: 0.75rem;
+        align-items: center;
+        text-align: left;
+        padding: 0.75rem;
+        border-radius: 8px;
+        color: var(--text-color);
+    }
+
+    .client-row:hover {
+        background: #f8fafc;
+    }
+
+    .client-row.active {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .client-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        background: #e0f2fe;
+        color: #075985;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+    }
+
+    .client-copy {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .client-copy strong,
+    .client-copy small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .client-copy small {
+        color: var(--text-muted);
+    }
+
+    .config-panel {
+        padding: 1.25rem;
+    }
+
+    .config-header {
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1rem;
+    }
+
+    .config-header h2,
+    .section-header h3 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+
+    .setup-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .setup-summary div {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: #f8fafc;
+        padding: 0.9rem;
+    }
+
+    .setup-summary span {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .setup-summary strong {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 1.2rem;
+    }
+
+    .config-section {
+        border-top: 1px solid var(--border-color);
+        padding-top: 1.25rem;
+        margin-top: 1.25rem;
+    }
+
+    .section-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
     }
 
     .language-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
-        max-height: 500px;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 0.65rem;
+        max-height: 430px;
         overflow-y: auto;
-        padding: 4px;
+        padding-right: 0.25rem;
     }
 
-    .language-item {
-        display: flex;
+    .language-tile {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        gap: 0.6rem;
         align-items: center;
-        padding: 0.75rem;
         border: 1px solid var(--border-color);
         border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-        background: var(--background-color);
+        background: #ffffff;
+        padding: 0.7rem;
+        text-align: left;
+        color: var(--text-color);
     }
 
-    .language-item:hover {
-        border-color: var(--primary-color);
-        background: rgba(var(--primary-rgb), 0.05);
+    .language-tile:hover {
+        border-color: var(--primary-light);
+        background: #f8fafc;
     }
 
-    .language-item.selected {
-        border-color: var(--primary-color);
-        background: rgba(var(--primary-rgb), 0.1);
+    .language-tile.selected {
+        border-color: #2563eb;
+        background: #eff6ff;
     }
 
-    .checkbox-custom {
-        width: 20px;
-        height: 20px;
-        border: 2px solid var(--text-muted);
-        border-radius: 4px;
-        margin-right: 10px;
+    .check-box {
+        width: 22px;
+        height: 22px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        transition: all 0.2s;
     }
 
-    .language-item.selected .checkbox-custom {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
+    .language-tile.selected .check-box {
+        background: #2563eb;
+        border-color: #2563eb;
     }
 
-    .lang-name {
-        font-weight: 500;
-        margin-right: auto;
+    .language-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 700;
     }
 
-    .lang-code {
-        font-size: 0.75rem;
+    .language-code {
         color: var(--text-muted);
-        background: rgba(0,0,0,0.05);
-        padding: 2px 6px;
-        border-radius: 4px;
+        background: #f1f5f9;
+        border-radius: 999px;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.75rem;
+        font-weight: 800;
+    }
+
+    .origin-input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.6rem;
+    }
+
+    .origin-list {
+        display: grid;
+        gap: 0.5rem;
+        margin-top: 0.85rem;
+    }
+
+    .origin-item {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) 34px;
+        align-items: center;
+        gap: 0.7rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .origin-item span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .btn-icon-danger {
+        border: 0;
+        background: transparent;
+        color: var(--danger-color);
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+    }
+
+    .btn-icon-danger:hover {
+        background: #fee2e2;
+    }
+
+    .inline-empty {
+        margin-top: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        color: #92400e;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 8px;
+        padding: 0.8rem;
+    }
+
+    @@media (max-width: 1000px) {
+        .config-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .client-panel {
+            position: static;
+        }
+
+        .setup-summary {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .panel-header,
+        .config-header,
+        .section-header,
+        .heading-actions {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .origin-input-row {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -203,102 +534,135 @@
     private HashSet<string> selectedLanguageCodes = new();
     private List<string> allowedOrigins = new();
     private string newOriginUrl = "";
+    private string clientSearch = "";
+    private string languageSearch = "";
     private bool isLoading = true;
-    private bool isSaving = false;
+    private bool isSaving;
     private string successMessage = "";
+    private string errorMessage = "";
+
+    private IEnumerable<Tenant> FilteredTenants =>
+        string.IsNullOrWhiteSpace(clientSearch)
+            ? tenants
+            : tenants.Where(t => t.Name.Contains(clientSearch, StringComparison.OrdinalIgnoreCase) ||
+                                 t.ContactEmail.Contains(clientSearch, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<Language> FilteredLanguages =>
+        string.IsNullOrWhiteSpace(languageSearch)
+            ? allLanguages
+            : allLanguages.Where(l => l.Name.Contains(languageSearch, StringComparison.OrdinalIgnoreCase) ||
+                                      l.Code.Contains(languageSearch, StringComparison.OrdinalIgnoreCase));
+
+    private int configuredClientCount => tenants.Count(t =>
+        (t.AllowedOrigins?.Any() == true) || !string.IsNullOrWhiteSpace(t.KnowledgeBaseText));
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        
-        // Load all tenants (ignoring query filters to see all clients as admin)
-        tenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
-        
-        // Load all languages
+        tenants = await context.Tenants
+            .IgnoreQueryFilters()
+            .Include(t => t.SupportedLanguages)
+            .OrderBy(t => t.Name)
+            .ToListAsync();
         allLanguages = await context.Languages.OrderBy(l => l.Name).ToListAsync();
-        
         isLoading = false;
     }
 
-    private async Task OnClientSelected(ChangeEventArgs e)
+    private async Task SelectTenant(Guid tenantId)
     {
-        var tenantId = e.Value?.ToString();
-        if (string.IsNullOrEmpty(tenantId))
-        {
-            selectedTenant = null;
-            selectedLanguageCodes.Clear();
-            allowedOrigins.Clear();
-            return;
-        }
+        successMessage = "";
+        errorMessage = "";
 
-        if (Guid.TryParse(tenantId, out var tenantGuid))
-        {
-            using var context = DbFactory.CreateDbContext();
-            selectedTenant = await context.Tenants
-                .Include(t => t.SupportedLanguages)
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(t => t.Id == tenantGuid);
+        using var context = DbFactory.CreateDbContext();
+        selectedTenant = await context.Tenants
+            .Include(t => t.SupportedLanguages)
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.Id == tenantId);
 
-            if (selectedTenant != null)
-            {
-                selectedLanguageCodes = selectedTenant.SupportedLanguages.Select(l => l.Code).ToHashSet();
-                allowedOrigins = selectedTenant.AllowedOrigins?.ToList() ?? new List<string>();
-            }
-            successMessage = "";
-        }
+        selectedLanguageCodes = selectedTenant?.SupportedLanguages.Select(l => l.Code).ToHashSet() ?? new();
+        allowedOrigins = selectedTenant?.AllowedOrigins?.ToList() ?? new();
+        languageSearch = "";
+        newOriginUrl = "";
     }
 
-    private bool IsLanguageSelected(string code)
-    {
-        return selectedLanguageCodes.Contains(code);
-    }
+    private bool IsLanguageSelected(string code) => selectedLanguageCodes.Contains(code);
 
     private void ToggleLanguage(string code)
     {
-        if (selectedLanguageCodes.Contains(code))
-        {
+        successMessage = "";
+        if (!selectedLanguageCodes.Add(code))
             selectedLanguageCodes.Remove(code);
-        }
-        else
-        {
-            selectedLanguageCodes.Add(code);
-        }
     }
-    
+
+    private void SelectCoreLanguages()
+    {
+        selectedLanguageCodes = new HashSet<string>(new[] { "en", "hi", "ar", "es", "fr" });
+        successMessage = "";
+    }
+
+    private void SelectAllLanguages()
+    {
+        selectedLanguageCodes = allLanguages.Select(l => l.Code).ToHashSet();
+        successMessage = "";
+    }
+
+    private void ClearLanguages()
+    {
+        selectedLanguageCodes.Clear();
+        successMessage = "";
+    }
+
     private void AddOrigin()
     {
-        if (!string.IsNullOrWhiteSpace(newOriginUrl))
+        successMessage = "";
+        errorMessage = "";
+
+        var url = newOriginUrl.Trim().TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        if (!IsValidOrigin(url))
         {
-            var url = newOriginUrl.Trim().TrimEnd('/');
-            // Basic validation or sanitization
-            if (!allowedOrigins.Contains(url))
-            {
-                allowedOrigins.Add(url);
-            }
-            newOriginUrl = "";
+            errorMessage = "Enter a valid origin such as https://example.com. Do not include paths.";
+            return;
         }
+
+        if (allowedOrigins.Contains(url, StringComparer.OrdinalIgnoreCase))
+        {
+            errorMessage = "This website is already in the allowlist.";
+            return;
+        }
+
+        allowedOrigins.Add(url);
+        newOriginUrl = "";
     }
-    
-    private void HandleEnterKey(KeyboardEventArgs e)
+
+    private void HandleOriginKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
-        {
             AddOrigin();
-        }
     }
-    
+
     private void RemoveOrigin(string origin)
     {
         allowedOrigins.Remove(origin);
+        successMessage = "";
     }
 
     private async Task SaveConfiguration()
     {
-        if (selectedTenant == null) return;
-        var tenantIdToUpdate = selectedTenant.Id;
+        if (selectedTenant == null || isSaving)
+            return;
+
+        if (!selectedLanguageCodes.Any())
+        {
+            errorMessage = "Select at least one supported language.";
+            return;
+        }
 
         isSaving = true;
         successMessage = "";
+        errorMessage = "";
 
         try
         {
@@ -306,41 +670,67 @@
             var tenantToUpdate = await context.Tenants
                 .Include(t => t.SupportedLanguages)
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(t => t.Id == tenantIdToUpdate);
+                .FirstOrDefaultAsync(t => t.Id == selectedTenant.Id);
 
-            if (tenantToUpdate != null)
+            if (tenantToUpdate == null)
             {
-                // Clear existing languages
-                tenantToUpdate.SupportedLanguages.Clear();
-
-                // Add selected languages
-                var languagesToAdd = await context.Languages
-                    .Where(l => selectedLanguageCodes.Contains(l.Code))
-                    .ToListAsync();
-
-                foreach (var lang in languagesToAdd)
-                {
-                    tenantToUpdate.SupportedLanguages.Add(lang);
-                }
-                
-                // Update Origins
-                tenantToUpdate.AllowedOrigins = new List<string>(allowedOrigins);
-
-                await context.SaveChangesAsync();
-                
-                // Update local state
-                selectedTenant = tenantToUpdate;
-                successMessage = "Configuration saved successfully!";
+                errorMessage = "Client no longer exists.";
+                return;
             }
+
+            tenantToUpdate.SupportedLanguages.Clear();
+            var languagesToAdd = await context.Languages
+                .Where(l => selectedLanguageCodes.Contains(l.Code))
+                .ToListAsync();
+
+            foreach (var language in languagesToAdd)
+                tenantToUpdate.SupportedLanguages.Add(language);
+
+            tenantToUpdate.AllowedOrigins = allowedOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            await context.SaveChangesAsync();
+
+            selectedTenant = tenantToUpdate;
+            var cached = tenants.FirstOrDefault(t => t.Id == tenantToUpdate.Id);
+            if (cached != null)
+            {
+                cached.AllowedOrigins = tenantToUpdate.AllowedOrigins;
+                cached.KnowledgeBaseText = tenantToUpdate.KnowledgeBaseText;
+                cached.SupportedLanguages = tenantToUpdate.SupportedLanguages;
+            }
+
+            successMessage = "Configuration saved.";
         }
         catch (Exception ex)
         {
-            // Handle error
-            Console.WriteLine($"Error saving configuration: {ex.Message}");
+            Console.Error.WriteLine(ex);
+            errorMessage = "Configuration could not be saved. Check the database connection and try again.";
         }
         finally
         {
             isSaving = false;
         }
+    }
+
+    private static bool IsValidOrigin(string origin)
+    {
+        return Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+               (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+               !string.IsNullOrWhiteSpace(uri.Host) &&
+               string.IsNullOrWhiteSpace(uri.PathAndQuery.Trim('/'));
+    }
+
+    private static string GetInitial(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "?" : value.Trim()[0].ToString().ToUpperInvariant();
+    }
+
+    private static string GetTenantStatus(Tenant tenant)
+    {
+        var parts = new List<string>();
+        if (tenant.SupportedLanguages?.Any() == true)
+            parts.Add($"{tenant.SupportedLanguages.Count} languages");
+        if (tenant.AllowedOrigins?.Any() == true)
+            parts.Add($"{tenant.AllowedOrigins.Count} websites");
+        return parts.Any() ? string.Join(" / ", parts) : "Needs setup";
     }
 }

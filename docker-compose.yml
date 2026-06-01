@@ -41,6 +41,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=hattie_db;Username=hattie_user;Password=hattie_password
       - Gemini__ApiKey=${GEMINI_API_KEY}
+      - Chatbot__PublicUrl=http://localhost:5000
     ports:
       - "5001:8080"
     depends_on:

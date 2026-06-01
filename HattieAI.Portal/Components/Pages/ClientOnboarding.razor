@@ -7,6 +7,7 @@
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
 @rendermode InteractiveServer
 
 <PageTitle>Clients | Hattie AI</PageTitle>
@@ -42,11 +43,13 @@
                 <div class="form-group mb-3">
                     <label class="form-label">Client Name</label>
                     <InputText class="form-control" @bind-Value="newTenant.Name" placeholder="e.g. Acme Corp" />
+                    <small class="text-muted">Use the public business name visitors will recognize.</small>
                 </div>
 
                 <div class="form-group mb-3">
                     <label class="form-label">Contact Email</label>
-                    <InputText class="form-control" @bind-Value="newTenant.ContactEmail" placeholder="e.g. contact@acme.com" />
+                    <InputText type="email" class="form-control" @bind-Value="newTenant.ContactEmail" placeholder="support@example.com" />
+                    <small class="text-muted">Used when the bot cannot answer from the knowledge base.</small>
                 </div>
 
                 <div class="form-group mb-3">
@@ -57,7 +60,7 @@
 
                 <div class="form-group mb-3">
                     <label class="form-label">Max Response Tokens</label>
-                    <InputNumber class="form-control" @bind-Value="newTenant.MaxTokensPerSession" />
+                    <InputNumber class="form-control" @bind-Value="newTenant.MaxTokensPerSession" min="200" max="8000" />
                     <small class="text-muted">Maximum response length / context safety ceiling.</small>
                 </div>
 
@@ -70,7 +73,7 @@
                 <div class="form-group mb-4">
                     <label class="form-label">Allowed Websites (CORS)</label>
                     <input type="text" class="form-control" @bind="allowedOriginsString" placeholder="https://example.com, https://another-site.com" />
-                    <small class="text-muted">Comma-separated list of websites where this chatbot will be embedded.</small>
+                    <small class="text-muted">Comma-separated website origins. Include scheme, domain, and port when needed.</small>
                 </div>
 
                 <div class="d-flex gap-2">
@@ -154,7 +157,7 @@
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm" style="max-width: 250px;">
-                                        <input type="text" class="form-control" value="http://localhost:5173/?tenantId=@tenant.Id" readonly />
+                                        <input type="text" class="form-control" value="@GetEmbedScript(tenant.Id)" readonly />
                                         <button class="btn btn-outline-secondary" @onclick="() => CopyToClipboard(tenant.Id)" title="Copy Link">
                                             <i class="bi bi-clipboard"></i>
                                         </button>
@@ -167,11 +170,10 @@
                                 </td>
                             </tr>
                         }
-                        }
                         @if (!tenants.Any())
                         {
                             <tr>
-                                <td colspan="3" class="text-center py-4 text-muted">No clients found.</td>
+                                <td colspan="6" class="text-center py-4 text-muted">No clients found.</td>
                             </tr>
                         }
                     </tbody>
@@ -370,16 +372,41 @@
         showSuccess = false;
         errorMessage = string.Empty;
 
-        // Parse allowed origins
         var origins = allowedOriginsString
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(o => o.Trim())
+            .Select(NormalizeOrigin)
             .Where(o => !string.IsNullOrWhiteSpace(o))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         try
         {
             using var context = DbFactory.CreateDbContext();
+
+            if (string.IsNullOrWhiteSpace(newTenant.Name))
+            {
+                errorMessage = "Client name is required.";
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(newTenant.ContactEmail) &&
+                !System.Net.Mail.MailAddress.TryCreate(newTenant.ContactEmail, out _))
+            {
+                errorMessage = "Enter a valid contact email address.";
+                return;
+            }
+
+            if (newTenant.MaxTokensPerSession < 200 || newTenant.MaxTokensPerSession > 8000)
+            {
+                errorMessage = "Max response tokens must be between 200 and 8000.";
+                return;
+            }
+
+            if (origins.Any(origin => !IsValidOrigin(origin)))
+            {
+                errorMessage = "Allowed websites must be valid origins such as https://example.com.";
+                return;
+            }
             
             // Check for duplicate name
             bool nameExists;
@@ -482,7 +509,37 @@
 
     private async Task CopyToClipboard(Guid tenantId)
     {
-        var runUrl = $"https://localhost:5173/?tenantId={tenantId}";
-        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", runUrl);
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", GetEmbedScript(tenantId));
+    }
+
+    private string GetChatbotPublicUrl()
+    {
+        var configuredUrl = Configuration["Chatbot:PublicUrl"];
+        if (!string.IsNullOrWhiteSpace(configuredUrl))
+            return configuredUrl.TrimEnd('/');
+
+        return Navigation.BaseUri.TrimEnd('/');
+    }
+
+    private string GetEmbedScript(Guid tenantId)
+    {
+        var publicUrl = GetChatbotPublicUrl();
+        return $"<script src=\"{publicUrl}/assets/index.js\" data-tenant-id=\"{tenantId}\" data-api-url=\"{publicUrl}\" defer></script>";
+    }
+
+    private static string NormalizeOrigin(string origin)
+    {
+        return origin.Trim().TrimEnd('/');
+    }
+
+    private static bool IsValidOrigin(string origin)
+    {
+        if (origin == "*")
+            return false;
+
+        return Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+               (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+               !string.IsNullOrWhiteSpace(uri.Host) &&
+               string.IsNullOrWhiteSpace(uri.PathAndQuery.Trim('/'));
     }
 }

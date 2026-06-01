@@ -1,353 +1,668 @@
 @page "/knowledge-base"
 @using HattieAI.Domain.Entities
-@using HattieAI.Infrastructure.Persistence
 @using HattieAI.Infrastructure.Documents
+@using HattieAI.Infrastructure.Persistence
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @attribute [Authorize]
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @inject DocumentBroker DocumentBroker
-@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Knowledge Base | Hattie AI</PageTitle>
 
-<div class="page-header">
-    <h1>Knowledge Base</h1>
-    <p class="text-muted">Manage and view knowledge sources for your AI clients.</p>
-</div>
+<div class="portal-page">
+    <div class="page-heading">
+        <div>
+            <h1>Knowledge Base</h1>
+            <p>Upload, paste, edit, and rebuild the knowledge used by each client chatbot.</p>
+        </div>
+        <div class="heading-actions">
+            <span class="metric-pill">@tenants.Count clients</span>
+            <span class="metric-pill">@clientsWithKnowledge ready</span>
+        </div>
+    </div>
 
-<div class="content-grid">
-    <!-- Selection & Upload Column -->
-    <div class="left-column">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3><i class="bi bi-person-badge me-2"></i> Select Client</h3>
-            </div>
-            <div class="card-body">
-                <select class="form-select form-select-lg" @bind="selectedTenantId" @bind:after="OnTenantSelected">
-                    <option value="">-- Choose a Client --</option>
+    @if (isLoading)
+    {
+        <div class="state-panel">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span>Loading knowledge bases...</span>
+        </div>
+    }
+    else if (!tenants.Any())
+    {
+        <div class="state-panel">
+            <i class="bi bi-book"></i>
+            <strong>No clients yet</strong>
+            <span>Create a client before adding chatbot knowledge.</span>
+            <a href="clients" class="btn btn-primary mt-2">Create Client</a>
+        </div>
+    }
+    else
+    {
+        <div class="knowledge-layout">
+            <aside class="knowledge-sidebar">
+                <div class="panel-title">
+                    <span>Client</span>
+                    <small>Select the knowledge owner</small>
+                </div>
+
+                <select class="form-select" @bind="selectedTenantId" @bind:after="OnTenantSelected">
+                    <option value="">Choose a client</option>
                     @foreach (var tenant in tenants)
                     {
                         <option value="@tenant.Id">@tenant.Name</option>
                     }
                 </select>
-            </div>
-        </div>
 
-        @if (!string.IsNullOrEmpty(selectedTenantId))
-        {
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="bi bi-cloud-upload me-2"></i> Add Knowledge</h3>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <label class="form-label">Upload PDF Document</label>
-                        <div class="upload-box">
-                            <InputFile OnChange="HandleFileSelected" class="file-input" accept=".pdf" />
-                            <div class="upload-content">
-                                <i class="bi bi-file-earmark-pdf upload-icon"></i>
-                                <span>Click or drag PDF here</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Or Add Raw Text</label>
-                        <textarea class="form-control" rows="5" @bind="rawTextToAdd" placeholder="Paste text content here..."></textarea>
-                    </div>
-
-                    <button class="btn btn-primary w-100" @onclick="AppendText" disabled="@(string.IsNullOrWhiteSpace(rawTextToAdd) || isProcessing)">
-                        @if (isProcessing)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                            <span>Processing...</span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-plus-lg me-2"></i> <span>Append to Knowledge Base</span>
-                        }
-                    </button>
-
-                    @if (showSuccess)
-                    {
-                        <div class="alert alert-success mt-3">
-                            <i class="bi bi-check-circle-fill me-2"></i> Knowledge updated successfully!
-                        </div>
-                    }
-                </div>
-            </div>
-        }
-    </div>
-
-    <!-- View & Edit Knowledge Column -->
-    <div class="right-column">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                    <h3><i class="bi bi-book-half me-2"></i> Current Knowledge</h3>
-                    @if (isEditing)
-                    {
-                        <span class="badge bg-warning text-dark">Editing Mode</span>
-                    }
-                </div>
-                <div class="d-flex align-items-center gap-3">
-                    @if (!string.IsNullOrEmpty(currentKnowledge))
-                    {
-                        <span class="badge bg-primary">@currentKnowledge.Length chars</span>
-                        
-                        @if (isEditing)
-                        {
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-success" @onclick="SaveKnowledgeBase">
-                                    <i class="bi bi-check-lg me-1"></i> Save
-                                </button>
-                                <button class="btn btn-outline-secondary" @onclick="CancelEdit">
-                                    <i class="bi bi-x-lg me-1"></i> Cancel
-                                </button>
-                            </div>
-                        }
-                        else
-                        {
-                            <button class="btn btn-sm btn-outline-primary" @onclick="EnableEdit">
-                                <i class="bi bi-pencil me-1"></i> Edit
-                            </button>
-                        }
-                    }
-                </div>
-            </div>
-            <div class="card-body p-0">
-                @if (string.IsNullOrEmpty(selectedTenantId))
+                @if (selectedTenant != null)
                 {
-                    <div class="empty-state">
-                        <i class="bi bi-arrow-left-circle"></i>
-                        <p>Select a client to view their knowledge base.</p>
+                    <div class="client-card">
+                        <div class="client-avatar">@GetInitial(selectedTenant.Name)</div>
+                        <div>
+                            <strong>@selectedTenant.Name</strong>
+                            <span>@selectedTenant.ContactEmail</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-list">
+                        <div>
+                            <span>Characters</span>
+                            <strong>@currentKnowledge.Length</strong>
+                        </div>
+                        <div>
+                            <span>Chunks</span>
+                            <strong>@chunkCount</strong>
+                        </div>
+                        <div>
+                            <span>Last Update</span>
+                            <strong>@lastUpdatedLabel</strong>
+                        </div>
                     </div>
                 }
-                else if (string.IsNullOrEmpty(currentKnowledge) && !isEditing)
+            </aside>
+
+            <section class="knowledge-workspace">
+                @if (selectedTenant == null)
                 {
-                    <div class="empty-state">
-                        <i class="bi bi-journal-x"></i>
-                        <p>No knowledge base data found for this client.</p>
+                    <div class="state-panel embedded">
+                        <i class="bi bi-arrow-left-circle"></i>
+                        <strong>Select a client</strong>
+                        <span>The upload and editor tools appear after a client is selected.</span>
                     </div>
                 }
                 else
                 {
-                    <div class="knowledge-viewer-container">
-                        @if (isEditing)
-                        {
-                            <textarea class="knowledge-editor" @bind="currentKnowledge" @bind:event="oninput"></textarea>
-                        }
-                        else
-                        {
-                            <div class="knowledge-viewer">
-                                <pre>@currentKnowledge</pre>
+                    <div class="workspace-grid">
+                        <div class="source-panel">
+                            <div class="section-title-row">
+                                <div>
+                                    <h2>Add Knowledge</h2>
+                                    <p>Use PDFs or pasted text. Content is chunked again after every save.</p>
+                                </div>
                             </div>
-                        }
+
+                            @if (!string.IsNullOrWhiteSpace(successMessage))
+                            {
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle me-2"></i>@successMessage
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(errorMessage))
+                            {
+                                <div class="alert alert-danger">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                                </div>
+                            }
+
+                            <label class="form-label">Source Label</label>
+                            <input class="form-control mb-3" @bind="sourceLabel" placeholder="Product FAQ, Pricing Sheet, Terms PDF" />
+
+                            <label class="form-label">PDF Upload</label>
+                            <div class="upload-zone">
+                                <InputFile OnChange="HandleFileSelected" class="file-input" accept=".pdf" />
+                                <i class="bi bi-file-earmark-arrow-up"></i>
+                                <strong>@(string.IsNullOrWhiteSpace(selectedFileName) ? "Drop or choose a PDF" : selectedFileName)</strong>
+                                <span>Maximum file size: 10 MB</span>
+                            </div>
+
+                            <div class="divider"><span>or paste text</span></div>
+
+                            <label class="form-label">Knowledge Text</label>
+                            <textarea class="form-control raw-input" @bind="rawTextToAdd" placeholder="Paste verified client information here."></textarea>
+
+                            <div class="mode-row">
+                                <label class="mode-option @(writeMode == KnowledgeWriteMode.Append ? "active" : "")">
+                                    <input type="radio" name="write-mode" checked="@(writeMode == KnowledgeWriteMode.Append)" @onchange="() => writeMode = KnowledgeWriteMode.Append" />
+                                    <span>Append</span>
+                                </label>
+                                <label class="mode-option @(writeMode == KnowledgeWriteMode.Replace ? "active" : "")">
+                                    <input type="radio" name="write-mode" checked="@(writeMode == KnowledgeWriteMode.Replace)" @onchange="() => writeMode = KnowledgeWriteMode.Replace" />
+                                    <span>Replace</span>
+                                </label>
+                            </div>
+
+                            <button class="btn btn-primary w-100" @onclick="SaveRawText" disabled="@(string.IsNullOrWhiteSpace(rawTextToAdd) || isProcessing)">
+                                @if (isProcessing)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                }
+                                <span>@(isProcessing ? "Processing..." : writeMode == KnowledgeWriteMode.Append ? "Append Text" : "Replace Knowledge")</span>
+                            </button>
+                        </div>
+
+                        <div class="editor-panel">
+                            <div class="editor-toolbar">
+                                <div>
+                                    <h2>Current Knowledge</h2>
+                                    <p>@currentKnowledge.Length characters available to the chatbot.</p>
+                                </div>
+                                <div class="toolbar-actions">
+                                    @if (isEditing)
+                                    {
+                                        <button class="btn btn-sm btn-primary" @onclick="SaveKnowledgeBase" disabled="@isProcessing">
+                                            <i class="bi bi-check-lg me-1"></i>Save
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit" disabled="@isProcessing">
+                                            Cancel
+                                        </button>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(currentKnowledge))
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="EnableEdit">
+                                            <i class="bi bi-pencil me-1"></i>Edit
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (string.IsNullOrWhiteSpace(currentKnowledge) && !isEditing)
+                            {
+                                <div class="empty-editor">
+                                    <i class="bi bi-journal-plus"></i>
+                                    <strong>No knowledge added</strong>
+                                    <span>Add a PDF or paste text to activate retrieval for this client.</span>
+                                </div>
+                            }
+                            else if (isEditing)
+                            {
+                                <textarea class="knowledge-editor" @bind="currentKnowledge" @bind:event="oninput"></textarea>
+                            }
+                            else
+                            {
+                                <div class="knowledge-reader">
+                                    <pre>@currentKnowledge</pre>
+                                </div>
+                            }
+                        </div>
                     </div>
                 }
-            </div>
+            </section>
         </div>
-    </div>
+    }
 </div>
 
 <style>
-    .page-header {
-        margin-bottom: 2rem;
-    }
-
-    .content-grid {
+    .knowledge-layout {
         display: grid;
-        grid-template-columns: 1fr 1.5fr;
-        gap: 2rem;
+        grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+        gap: 1.25rem;
         align-items: start;
     }
 
-    @@media (max-width: 992px) {
-        .content-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .upload-box {
-        position: relative;
-        border: 2px dashed var(--border-color);
+    .knowledge-sidebar,
+    .knowledge-workspace,
+    .source-panel,
+    .editor-panel {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
         border-radius: var(--border-radius);
-        padding: 2rem;
-        text-align: center;
-        transition: all 0.2s;
-        background: rgba(0, 0, 0, 0.02);
-        cursor: pointer;
+        box-shadow: var(--shadow-sm);
     }
 
-    .upload-box:hover {
-        border-color: var(--primary-color);
-        background: rgba(99, 102, 241, 0.05);
-    }
-
-    .file-input {
-        position: absolute;
+    .knowledge-sidebar {
+        position: sticky;
         top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
+        padding: 1rem;
     }
 
-    .upload-content {
+    .panel-title,
+    .section-title-row,
+    .editor-toolbar {
         display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .panel-title {
+        margin-bottom: 0.8rem;
         flex-direction: column;
-        align-items: center;
-        pointer-events: none;
+        gap: 0.15rem;
     }
 
-    .upload-icon {
-        font-size: 2rem;
-        color: var(--text-muted);
-        margin-bottom: 0.5rem;
+    .panel-title span,
+    .section-title-row h2,
+    .editor-toolbar h2 {
+        color: var(--text-color);
+        font-weight: 800;
     }
 
-    .knowledge-viewer-container {
-        height: 600px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .knowledge-viewer, .knowledge-editor {
-        background-color: #1e1e1e; /* Dark editor-like background */
-        color: #d4d4d4;
-        padding: 1.5rem;
-        flex: 1;
-        overflow-y: auto;
-        font-family: 'Fira Code', monospace;
-        font-size: 0.9rem;
-        line-height: 1.6;
-        border: none;
-        resize: none;
-        width: 100%;
-    }
-
-    .knowledge-viewer pre {
-        white-space: pre-wrap;
+    .section-title-row h2,
+    .editor-toolbar h2 {
         margin: 0;
+        font-size: 1.1rem;
     }
 
-    .knowledge-editor:focus {
-        outline: none;
-        background-color: #252526;
+    .panel-title small,
+    .section-title-row p,
+    .editor-toolbar p {
+        color: var(--text-muted);
+        margin: 0.2rem 0 0;
     }
 
-    .empty-state {
+    .client-card {
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        gap: 0.75rem;
+        align-items: center;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: #f8fafc;
+        padding: 0.8rem;
+        margin-top: 1rem;
+    }
+
+    .client-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: #dcfce7;
+        color: #166534;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+    }
+
+    .client-card strong,
+    .client-card span {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .client-card span {
+        color: var(--text-muted);
+        font-size: 0.84rem;
+    }
+
+    .stat-list {
+        display: grid;
+        gap: 0.55rem;
+        margin-top: 1rem;
+    }
+
+    .stat-list div {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.55rem;
+    }
+
+    .stat-list div:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .stat-list span {
+        color: var(--text-muted);
+        font-weight: 700;
+    }
+
+    .knowledge-workspace {
+        padding: 1rem;
+    }
+
+    .workspace-grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .source-panel,
+    .editor-panel {
+        padding: 1rem;
+        min-width: 0;
+    }
+
+    .upload-zone {
+        position: relative;
+        min-height: 150px;
+        border: 1px dashed #94a3b8;
+        background: #f8fafc;
+        border-radius: 8px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 400px;
-        color: var(--text-muted);
+        gap: 0.3rem;
         text-align: center;
-        padding: 2rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
     }
 
-    .empty-state i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
+    .upload-zone:hover {
+        border-color: var(--primary-color);
+        background: #eff6ff;
+    }
+
+    .upload-zone i {
+        color: var(--primary-color);
+        font-size: 2rem;
+    }
+
+    .upload-zone span {
+        color: var(--text-muted);
+        font-size: 0.84rem;
+    }
+
+    .file-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        margin: 1rem 0;
+    }
+
+    .divider::before,
+    .divider::after {
+        content: "";
+        height: 1px;
+        background: var(--border-color);
+        flex: 1;
+    }
+
+    .raw-input {
+        min-height: 180px;
+        resize: vertical;
+    }
+
+    .mode-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.55rem;
+        margin: 0.85rem 0;
+    }
+
+    .mode-option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.6rem;
+        cursor: pointer;
+        font-weight: 800;
+        color: var(--text-muted);
+    }
+
+    .mode-option.active {
+        border-color: var(--primary-color);
+        background: #eff6ff;
+        color: var(--primary-dark);
+    }
+
+    .mode-option input {
+        accent-color: var(--primary-color);
+    }
+
+    .editor-panel {
+        display: flex;
+        flex-direction: column;
+        min-height: 680px;
+    }
+
+    .editor-toolbar {
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.9rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .toolbar-actions {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .empty-editor {
+        flex: 1;
+        min-height: 480px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: var(--text-muted);
+        text-align: center;
+        border: 1px dashed var(--border-color);
+        border-radius: 8px;
+        background: #f8fafc;
+    }
+
+    .empty-editor i {
+        font-size: 2rem;
+        color: var(--primary-color);
+    }
+
+    .empty-editor strong {
+        color: var(--text-color);
+    }
+
+    .knowledge-reader,
+    .knowledge-editor {
+        flex: 1;
+        min-height: 540px;
+        width: 100%;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: #f8fafc;
+        color: var(--text-color);
+        font-family: 'JetBrains Mono', Consolas, monospace;
+        font-size: 0.86rem;
+        line-height: 1.65;
+        padding: 1rem;
+        overflow: auto;
+    }
+
+    .knowledge-reader pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .knowledge-editor {
+        resize: none;
+        outline: 0;
+    }
+
+    .knowledge-editor:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--border-focus);
+    }
+
+    @@media (max-width: 1180px) {
+        .knowledge-layout,
+        .workspace-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .knowledge-sidebar {
+            position: static;
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .editor-toolbar,
+        .section-title-row {
+            flex-direction: column;
+        }
+
+        .toolbar-actions {
+            justify-content: flex-start;
+        }
     }
 </style>
 
 @code {
     private List<Tenant> tenants = new();
+    private Tenant? selectedTenant;
     private string selectedTenantId = string.Empty;
     private string rawTextToAdd = string.Empty;
     private string currentKnowledge = string.Empty;
-    private string originalKnowledge = string.Empty; // For cancel functionality
-    private bool showSuccess = false;
-    private bool isProcessing = false;
-    private bool isEditing = false;
+    private string originalKnowledge = string.Empty;
+    private string sourceLabel = string.Empty;
+    private string selectedFileName = string.Empty;
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+    private string lastUpdatedLabel = "Not tracked";
+    private int chunkCount;
+    private int clientsWithKnowledge;
+    private bool isLoading = true;
+    private bool isProcessing;
+    private bool isEditing;
+    private KnowledgeWriteMode writeMode = KnowledgeWriteMode.Append;
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
         tenants = await context.Tenants.IgnoreQueryFilters().OrderBy(t => t.Name).ToListAsync();
+        clientsWithKnowledge = tenants.Count(t => !string.IsNullOrWhiteSpace(t.KnowledgeBaseText));
+        isLoading = false;
     }
 
     private async Task OnTenantSelected()
     {
-        showSuccess = false;
+        ResetMessages();
         rawTextToAdd = "";
+        sourceLabel = "";
+        selectedFileName = "";
         isEditing = false;
+
+        if (string.IsNullOrWhiteSpace(selectedTenantId))
+        {
+            selectedTenant = null;
+            currentKnowledge = "";
+            chunkCount = 0;
+            return;
+        }
+
         await LoadCurrentKnowledge();
     }
 
     private async Task LoadCurrentKnowledge()
     {
-        if (string.IsNullOrEmpty(selectedTenantId))
-        {
-            currentKnowledge = string.Empty;
+        if (!Guid.TryParse(selectedTenantId, out var tenantGuid))
             return;
-        }
 
-        var tenantGuid = Guid.Parse(selectedTenantId);
         using var context = DbFactory.CreateDbContext();
-        var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
-        currentKnowledge = tenant?.KnowledgeBaseText ?? string.Empty;
+        selectedTenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
+        currentKnowledge = selectedTenant?.KnowledgeBaseText ?? string.Empty;
+        chunkCount = selectedTenant == null
+            ? 0
+            : await context.KnowledgeChunks.IgnoreQueryFilters().CountAsync(k => k.TenantId == selectedTenant.TenantId);
     }
 
     private void EnableEdit()
     {
         originalKnowledge = currentKnowledge;
         isEditing = true;
+        ResetMessages();
     }
 
     private void CancelEdit()
     {
         currentKnowledge = originalKnowledge;
         isEditing = false;
+        ResetMessages();
     }
 
     private async Task SaveKnowledgeBase()
     {
-        if (string.IsNullOrEmpty(selectedTenantId)) return;
+        if (selectedTenant == null || isProcessing)
+            return;
 
-        var tenantGuid = Guid.Parse(selectedTenantId);
-        using var context = DbFactory.CreateDbContext();
-        var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
+        isProcessing = true;
+        ResetMessages();
 
-        if (tenant != null)
+        try
         {
-            tenant.KnowledgeBaseText = currentKnowledge;
-            await RebuildVectorChunksAsync(context, tenant);
-            await context.SaveChangesAsync();
-            
-            showSuccess = true;
+            await SaveKnowledgeText(currentKnowledge, KnowledgeWriteMode.Replace, "Manual editor");
             isEditing = false;
+            successMessage = "Knowledge saved and chunks rebuilt.";
+        }
+        finally
+        {
+            isProcessing = false;
         }
     }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        if (string.IsNullOrEmpty(selectedTenantId)) return;
+        if (selectedTenant == null || isProcessing)
+            return;
 
         isProcessing = true;
-        showSuccess = false;
+        ResetMessages();
 
         try
         {
             var file = e.File;
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+            selectedFileName = file.Name;
+
+            if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                errorMessage = "Only PDF uploads are supported.";
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
             using var memoryStream = new MemoryStream();
             await stream.CopyToAsync(memoryStream);
             memoryStream.Position = 0;
 
             var text = DocumentBroker.ExtractText(memoryStream);
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                errorMessage = "No readable text was found in this PDF.";
+                return;
+            }
 
-            await AppendToKnowledgeBase(text);
+            await SaveKnowledgeText(text, writeMode, string.IsNullOrWhiteSpace(sourceLabel) ? file.Name : sourceLabel);
+            successMessage = writeMode == KnowledgeWriteMode.Append
+                ? "PDF content appended and chunks rebuilt."
+                : "Knowledge replaced from PDF and chunks rebuilt.";
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            Console.Error.WriteLine(ex);
+            errorMessage = "PDF could not be processed. Check the file and try again.";
         }
         finally
         {
@@ -355,17 +670,26 @@
         }
     }
 
-    private async Task AppendText()
+    private async Task SaveRawText()
     {
-        if (string.IsNullOrWhiteSpace(rawTextToAdd) || string.IsNullOrEmpty(selectedTenantId)) return;
-        
+        if (selectedTenant == null || string.IsNullOrWhiteSpace(rawTextToAdd) || isProcessing)
+            return;
+
         isProcessing = true;
-        showSuccess = false;
+        ResetMessages();
 
         try
         {
-            await AppendToKnowledgeBase(rawTextToAdd);
-            rawTextToAdd = ""; // Clear input
+            await SaveKnowledgeText(rawTextToAdd, writeMode, string.IsNullOrWhiteSpace(sourceLabel) ? "Pasted text" : sourceLabel);
+            rawTextToAdd = "";
+            successMessage = writeMode == KnowledgeWriteMode.Append
+                ? "Text appended and chunks rebuilt."
+                : "Knowledge replaced and chunks rebuilt.";
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex);
+            errorMessage = "Knowledge could not be saved. Check the database connection and try again.";
         }
         finally
         {
@@ -373,86 +697,106 @@
         }
     }
 
-    private async Task AppendToKnowledgeBase(string text)
+    private async Task SaveKnowledgeText(string text, KnowledgeWriteMode mode, string label)
     {
-        var tenantGuid = Guid.Parse(selectedTenantId);
-        using var context = DbFactory.CreateDbContext();
-        var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
-        
-        if (tenant != null)
-        {
-            if (string.IsNullOrEmpty(tenant.KnowledgeBaseText))
-                tenant.KnowledgeBaseText = text;
-            else
-                tenant.KnowledgeBaseText += "\n\n" + text;
+        if (selectedTenant == null)
+            return;
 
-            await RebuildVectorChunksAsync(context, tenant);
-            await context.SaveChangesAsync();
-            
-            // Refresh the view
-            currentKnowledge = tenant.KnowledgeBaseText;
-            // If we were editing, update original too so cancel doesn't revert the append
-            if (isEditing) originalKnowledge = currentKnowledge;
-            
-            showSuccess = true;
+        using var context = DbFactory.CreateDbContext();
+        var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == selectedTenant.Id);
+        if (tenant == null)
+        {
+            errorMessage = "Client no longer exists.";
+            return;
         }
+
+        var labelledText = ApplySourceLabel(text, label);
+        tenant.KnowledgeBaseText = mode == KnowledgeWriteMode.Replace || string.IsNullOrWhiteSpace(tenant.KnowledgeBaseText)
+            ? labelledText
+            : $"{tenant.KnowledgeBaseText.Trim()}\n\n{labelledText}";
+
+        await RebuildVectorChunksAsync(context, tenant);
+        await context.SaveChangesAsync();
+
+        selectedTenant = tenant;
+        currentKnowledge = tenant.KnowledgeBaseText;
+        originalKnowledge = currentKnowledge;
+        chunkCount = await context.KnowledgeChunks.IgnoreQueryFilters().CountAsync(k => k.TenantId == tenant.TenantId);
+        clientsWithKnowledge = tenants.Count(t => t.Id == tenant.Id ? !string.IsNullOrWhiteSpace(tenant.KnowledgeBaseText) : !string.IsNullOrWhiteSpace(t.KnowledgeBaseText));
+        lastUpdatedLabel = DateTime.Now.ToString("MMM dd, HH:mm");
+
+        var cachedTenant = tenants.FirstOrDefault(t => t.Id == tenant.Id);
+        if (cachedTenant != null)
+            cachedTenant.KnowledgeBaseText = tenant.KnowledgeBaseText;
+    }
+
+    private static string ApplySourceLabel(string text, string label)
+    {
+        var cleanText = text.Trim();
+        var cleanLabel = label.Trim();
+        return string.IsNullOrWhiteSpace(cleanLabel)
+            ? cleanText
+            : $"# Source: {cleanLabel}\n\n{cleanText}";
     }
 
     private async Task RebuildVectorChunksAsync(HattieDbContext context, Tenant tenant)
     {
-        // 1. DELETE OLD CHUNKS
         var oldChunks = await context.KnowledgeChunks
+            .IgnoreQueryFilters()
             .Where(k => k.TenantId == tenant.TenantId)
             .ToListAsync();
         context.KnowledgeChunks.RemoveRange(oldChunks);
 
-        // 2. CHUNK AND EMBED NEW TEXT
-        if (!string.IsNullOrEmpty(tenant.KnowledgeBaseText))
+        if (string.IsNullOrWhiteSpace(tenant.KnowledgeBaseText))
+            return;
+
+        var chunks = ChunkText(tenant.KnowledgeBaseText, 700);
+        foreach (var chunkText in chunks)
         {
-            var chunks = ChunkText(tenant.KnowledgeBaseText, 500); 
-            foreach (var chunkText in chunks)
+            context.KnowledgeChunks.Add(new KnowledgeChunk
             {
-                var vector = GenerateSimpleEmbedding(chunkText);
-                context.KnowledgeChunks.Add(new KnowledgeChunk
-                {
-                    Id = Guid.NewGuid(),
-                    TenantId = tenant.TenantId,
-                    Content = chunkText,
-                    Embedding = vector,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
+                Id = Guid.NewGuid(),
+                TenantId = tenant.TenantId,
+                Content = chunkText,
+                Embedding = GenerateSimpleEmbedding(chunkText),
+                CreatedAt = DateTime.UtcNow
+            });
         }
     }
 
-    private List<string> ChunkText(string text, int maxChunkSize)
+    private static List<string> ChunkText(string text, int maxChunkSize)
     {
-        var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var paragraphs = text.Split(new[] { "\r\n\r\n", "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
         var chunks = new List<string>();
         var currentChunk = "";
 
-        foreach (var line in lines)
+        foreach (var paragraph in paragraphs)
         {
-            if (currentChunk.Length + line.Length > maxChunkSize)
+            var cleanParagraph = paragraph.Trim();
+            if (string.IsNullOrWhiteSpace(cleanParagraph))
+                continue;
+
+            if (currentChunk.Length + cleanParagraph.Length > maxChunkSize && !string.IsNullOrWhiteSpace(currentChunk))
             {
-                chunks.Add(currentChunk);
+                chunks.Add(currentChunk.Trim());
                 currentChunk = "";
             }
-            currentChunk += line + " ";
+
+            currentChunk += cleanParagraph + "\n\n";
         }
+
         if (!string.IsNullOrWhiteSpace(currentChunk))
-        {
-            chunks.Add(currentChunk);
-        }
+            chunks.Add(currentChunk.Trim());
+
         return chunks;
     }
 
-    private float[] GenerateSimpleEmbedding(string text)
+    private static float[] GenerateSimpleEmbedding(string text)
     {
         const int dimensions = 768;
         var embedding = new float[dimensions];
         var words = text.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        
+
         foreach (var word in words)
         {
             var hash = word.GetHashCode();
@@ -460,14 +804,30 @@
             embedding[index] += 1.0f;
         }
 
-        // Normalize
         var magnitude = (float)Math.Sqrt(embedding.Sum(x => x * x));
         if (magnitude > 0)
         {
-            for (int i = 0; i < dimensions; i++)
+            for (var i = 0; i < dimensions; i++)
                 embedding[i] /= magnitude;
         }
 
         return embedding;
+    }
+
+    private void ResetMessages()
+    {
+        successMessage = "";
+        errorMessage = "";
+    }
+
+    private static string GetInitial(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "?" : value.Trim()[0].ToString().ToUpperInvariant();
+    }
+
+    private enum KnowledgeWriteMode
+    {
+        Append,
+        Replace
     }
 }

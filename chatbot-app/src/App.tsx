@@ -5,19 +5,14 @@ function App() {
     const [tenantId, setTenantId] = useState<string | null>(null);
 
     useEffect(() => {
-        // 1. Try to get tenantId from URL query params (for direct link)
         const params = new URLSearchParams(window.location.search);
-        let tid = params.get('tenantId');
-
-        // 2. If not in URL, check global configuration object (for embedding)
-        if (!tid && window.HattieAI && window.HattieAI.tenantId) {
-            tid = window.HattieAI.tenantId;
-        }
+        const scriptTenantId = document.querySelector<HTMLScriptElement>('script[data-tenant-id]')?.dataset.tenantId;
+        const tid = params.get('tenantId') || window.HattieAI?.tenantId || scriptTenantId || null;
 
         if (tid) {
             setTenantId(tid);
         } else {
-            console.error("Tenant ID not found in URL or window.HattieAI config");
+            console.error("Tenant ID not found. Provide ?tenantId=..., window.HattieAI.tenantId, or script data-tenant-id.");
         }
     }, []);
 

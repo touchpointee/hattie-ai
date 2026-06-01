@@ -12,7 +12,7 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
     const [languages, setLanguages] = useState<{ code: string; name: string }[]>([]);
     const [language, setLanguage] = useState<string>('en');
 
-    let apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL;
+    let apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL || window.location.origin;
 
     // Safety check: If in production mode but URL is localhost, force production URL
     // (This is for when we build and deploy to a host that isn't the chatbot host)
@@ -20,12 +20,12 @@ export default function ChatWidget({ chatbotId }: ChatWidgetProps) {
         apiUrl = 'https://hattie.touchpointe.digital';
     }
 
-    const logoUrl = import.meta.env.DEV ? '/hattie.png' : `${apiUrl}/hattie.png`;
+    const logoUrl = import.meta.env.DEV && !((window as any).HattieAI?.apiUrl) ? '/hattie.png' : `${apiUrl}/hattie.png`;
 
     useEffect(() => {
         setMounted(true);
         // Fetch tenant info to get supported languages
-        if (chatbotId) {
+        if (chatbotId && apiUrl) {
             fetch(`${apiUrl}/api/Tenants/${chatbotId}`)
                 .then(res => res.json())
                 .then(data => {

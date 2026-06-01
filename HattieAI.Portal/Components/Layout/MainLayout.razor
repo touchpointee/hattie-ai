@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using HattieAI.Portal.Auth
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavManager
 
@@ -32,7 +33,7 @@
                         </div>
                         <div class="user-info">
                             <span class="user-name">@context.User.Identity?.Name</span>
-                            <span class="user-role">Admin</span>
+                            <span class="user-role">@GetUserRole(context.User)</span>
                         </div>
                     </div>
                     <button class="btn-logout-full" @onclick="Logout">
@@ -52,10 +53,16 @@
                 <button class="btn-toggle-sidebar d-md-none" @onclick="ToggleSidebar">
                     <i class="bi bi-list"></i>
                 </button>
-                <h2 class="page-title">Dashboard</h2>
+                <div>
+                    <h2 class="page-title">@CurrentPageTitle</h2>
+                    <div class="page-subtitle">@CurrentPageSubtitle</div>
+                </div>
             </div>
             <div class="top-bar-right">
-                <a href="#" class="help-link">Help & Docs</a>
+                <a href="clients" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Client
+                </a>
             </div>
         </header>
 
@@ -68,7 +75,7 @@
 <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+    <a class="dismiss">x</a>
 </div>
 
 <style>
@@ -240,9 +247,15 @@
 
     .page-title {
         font-size: 1.25rem;
-        font-weight: 600;
+        font-weight: 800;
         margin: 0;
         color: var(--text-color);
+    }
+
+    .page-subtitle {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        margin-top: 0.1rem;
     }
 
     .help-link {
@@ -328,6 +341,25 @@
 
 @code {
     private bool isSidebarOpen = false;
+    private string CurrentPath => new Uri(NavManager.Uri).AbsolutePath.Trim('/').ToLowerInvariant();
+    private string CurrentPageTitle => CurrentPath switch
+    {
+        "" => "Dashboard",
+        "clients" => "Clients",
+        "knowledge-base" => "Knowledge Base",
+        "client-configuration" => "Configuration",
+        "documentation" => "Documentation",
+        _ => "Hattie AI"
+    };
+    private string CurrentPageSubtitle => CurrentPath switch
+    {
+        "" => "Live client, conversation, and setup metrics",
+        "clients" => "Onboard and manage chatbot clients",
+        "knowledge-base" => "Upload, edit, and rebuild client knowledge",
+        "client-configuration" => "Languages and website allowlists",
+        "documentation" => "Install guides and operating procedures",
+        _ => "Admin portal"
+    };
 
     private void ToggleSidebar()
     {
@@ -367,5 +399,9 @@
     public void Dispose()
     {
         NavManager.LocationChanged -= OnLocationChanged;
+    }
+    private static string GetUserRole(ClaimsPrincipal user)
+    {
+        return user.FindFirst(ClaimTypes.Role)?.Value ?? "User";
     }
 }
