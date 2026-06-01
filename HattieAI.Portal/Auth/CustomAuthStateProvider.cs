@@ -8,6 +8,7 @@ namespace HattieAI.Portal.Auth
     {
         private readonly ProtectedLocalStorage _localStorage;
         private ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
+        private ClaimsPrincipal? _currentUser;
 
         public CustomAuthStateProvider(ProtectedLocalStorage localStorage)
         {
@@ -16,6 +17,9 @@ namespace HattieAI.Portal.Auth
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
+            if (_currentUser?.Identity?.IsAuthenticated == true)
+                return new AuthenticationState(_currentUser);
+
             try
             {
                 var userSessionResult = await _localStorage.GetAsync<UserSession>("UserSession");
@@ -37,6 +41,7 @@ namespace HattieAI.Portal.Auth
                     new Claim(ClaimTypes.Role, userSession.Role)
                 }, "CustomAuth"));
 
+                _currentUser = claimsPrincipal;
                 return await Task.FromResult(new AuthenticationState(claimsPrincipal));
             }
             catch
@@ -60,11 +65,13 @@ namespace HattieAI.Portal.Auth
                     new Claim(ClaimTypes.Name, userSession.UserName),
                     new Claim(ClaimTypes.Role, userSession.Role)
                 }, "CustomAuth"));
+                _currentUser = claimsPrincipal;
             }
             else
             {
                 await _localStorage.DeleteAsync("UserSession");
                 claimsPrincipal = _anonymous;
+                _currentUser = null;
             }
 
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));

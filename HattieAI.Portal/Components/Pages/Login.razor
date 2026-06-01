@@ -9,107 +9,322 @@
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @rendermode InteractiveServer
 
-<div class="login-container">
-    <div class="login-header">
-        <div class="logo-circle">
-            <span class="logo-text">H</span>
+<div class="login-shell">
+    <section class="login-intro">
+        <div class="brand-mark">
+            <img src="images/hattie.png" alt="Hattie AI" />
         </div>
-        <h2>Welcome Back</h2>
-        <p class="text-muted">Sign in to access your dashboard</p>
-    </div>
-
-    <EditForm Model="@loginModel" OnSubmit="Authenticate" class="login-form">
-        <div class="form-group">
-            <label>Username or Email</label>
-            <InputText class="form-control" @bind-Value="loginModel.UserNameOrEmail" placeholder="admin@example.com" autocomplete="username" />
+        <div>
+            <p class="eyebrow">Hattie AI Portal</p>
+            <h1>Manage clients, knowledge, languages, and website access from one workspace.</h1>
+            <p class="intro-copy">Use the admin portal to keep chatbot deployments accurate, connected, and ready for production sites.</p>
         </div>
-        <div class="form-group">
-            <label>Password</label>
-            <InputText type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Enter your password" autocomplete="current-password" />
-        </div>
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-circle-fill me-2"></i> @errorMessage
+        <div class="intro-grid">
+            <div>
+                <i class="bi bi-shield-check"></i>
+                <span>Protected admin access</span>
             </div>
-        }
+            <div>
+                <i class="bi bi-database-check"></i>
+                <span>Live configuration data</span>
+            </div>
+            <div>
+                <i class="bi bi-globe2"></i>
+                <span>Website allowlist control</span>
+            </div>
+        </div>
+    </section>
 
-        <button type="submit" class="btn btn-primary w-100" disabled="@isProcessing">
-            @if (isProcessing)
-            {
-                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-            }
-            <span>@(isProcessing ? "Signing in..." : "Sign In")</span>
-        </button>
-    </EditForm>
-    
-    <div class="login-footer">
-        <p>Powered by <strong>Hattie AI</strong></p>
-    </div>
+    <section class="login-panel">
+        <div class="login-card">
+            <div class="login-header">
+                <div>
+                    <span class="panel-kicker">Admin sign in</span>
+                    <h2>Welcome back</h2>
+                </div>
+                <span class="status-pill">
+                    <i class="bi bi-circle-fill"></i>
+                    Secure
+                </span>
+            </div>
+
+            <EditForm Model="@loginModel" OnSubmit="Authenticate" class="login-form">
+                <div class="form-group">
+                    <label>Username or Email</label>
+                    <div class="input-shell">
+                        <i class="bi bi-person"></i>
+                        <InputText class="form-control" @bind-Value="loginModel.UserNameOrEmail" placeholder="admin or admin@hattie.ai" autocomplete="username" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-shell">
+                        <i class="bi bi-lock"></i>
+                        <InputText type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Enter password" autocomplete="current-password" />
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i> @errorMessage
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-primary w-100 login-button" disabled="@isProcessing">
+                    @if (isProcessing)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                    }
+                    <span>@(isProcessing ? "Signing in..." : "Sign in")</span>
+                </button>
+            </EditForm>
+
+            <div class="login-footer">
+                <span>Default admin</span>
+                <strong>admin / admin</strong>
+            </div>
+        </div>
+    </section>
 </div>
 
 <style>
-    .login-container {
-        background: var(--surface-color);
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow-lg);
-        padding: 2.5rem;
-        width: 100%;
+    .login-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(420px, 0.9fr);
+        align-items: stretch;
+    }
+
+    .login-intro {
+        padding: clamp(2rem, 6vw, 5rem);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 3rem;
+    }
+
+    .brand-mark {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+        background: #ffffff;
         border: 1px solid var(--border-color);
-    }
-
-    .login-header {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-
-    .logo-circle {
-        width: 64px;
-        height: 64px;
-        background: var(--primary-gradient);
-        border-radius: 50%;
+        box-shadow: var(--shadow-md);
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 1.5rem;
-        box-shadow: var(--shadow-md);
     }
 
-    .logo-text {
-        color: white;
-        font-size: 2rem;
+    .brand-mark img {
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+    }
+
+    .eyebrow,
+    .panel-kicker {
+        margin: 0 0 0.75rem;
+        color: var(--secondary-color);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .login-intro h1 {
+        max-width: 720px;
+        margin: 0;
+        color: #0f172a;
+        font-size: clamp(2.4rem, 5vw, 4.75rem);
+        line-height: 0.98;
         font-weight: 800;
     }
 
+    .intro-copy {
+        max-width: 560px;
+        margin: 1.2rem 0 0;
+        color: var(--text-muted);
+        font-size: 1.05rem;
+        line-height: 1.7;
+    }
+
+    .intro-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+        max-width: 760px;
+    }
+
+    .intro-grid div {
+        min-height: 96px;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(219, 227, 238, 0.9);
+        border-radius: 8px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.85rem;
+        color: var(--text-color);
+        font-weight: 700;
+    }
+
+    .intro-grid i {
+        color: var(--primary-color);
+        font-size: 1.3rem;
+    }
+
+    .login-panel {
+        padding: clamp(1.25rem, 4vw, 3rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.5);
+        border-left: 1px solid rgba(219, 227, 238, 0.8);
+    }
+
+    .login-card {
+        background: var(--surface-color);
+        width: 100%;
+        max-width: 460px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
+        padding: 2rem;
+    }
+
+    .login-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .login-header h2 {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 1.65rem;
+        font-weight: 800;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 30px;
+        padding: 0 0.65rem;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #047857;
+        font-size: 0.78rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .status-pill i {
+        font-size: 0.42rem;
+    }
+
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.1rem;
     }
 
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: var(--text-muted);
-        font-size: 0.9rem;
+        font-weight: 800;
+        color: var(--text-color);
+        font-size: 0.84rem;
+    }
+
+    .input-shell {
+        position: relative;
+    }
+
+    .input-shell i {
+        position: absolute;
+        left: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+        z-index: 2;
+    }
+
+    .input-shell .form-control {
+        padding-left: 2.55rem !important;
+        min-height: 48px;
+    }
+
+    .login-button {
+        min-height: 48px;
+        margin-top: 0.25rem;
     }
 
     .login-footer {
-        margin-top: 2rem;
-        text-align: center;
-        font-size: 0.875rem;
+        margin-top: 1.4rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: #f8fafc;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
         color: var(--text-muted);
+        font-size: 0.86rem;
+    }
+
+    .login-footer strong {
+        color: var(--text-color);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
     }
 
     .alert {
         padding: 0.75rem 1rem;
-        border-radius: var(--border-radius);
-        background-color: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: var(--border-radius-sm);
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
         color: var(--danger-color);
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.1rem;
         font-size: 0.9rem;
     }
+
+    @@media (max-width: 960px) {
+        .login-shell {
+            grid-template-columns: 1fr;
+        }
+
+        .login-intro {
+            padding-bottom: 1rem;
+        }
+
+        .login-panel {
+            border-left: 0;
+            align-items: flex-start;
+        }
+
+        .intro-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .login-card {
+            padding: 1.25rem;
+        }
+
+        .login-header {
+            flex-direction: column;
+        }
+    }
+
 </style>
 
 @code {
@@ -143,7 +358,7 @@
             {
                 var userSession = new UserSession { UserName = user.Username, Role = user.Role };
                 await AuthStateProvider.UpdateAuthenticationState(userSession);
-                NavManager.NavigateTo("/", forceLoad: true);
+                NavManager.NavigateTo("/");
             }
             else
             {

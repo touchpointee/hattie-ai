@@ -69,6 +69,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<HattieDbContext>();
     dbContext.Database.Migrate();
+    await DefaultAdminAccount.EnsureAsync(dbContext);
 }
 
 // Configure the HTTP request pipeline.

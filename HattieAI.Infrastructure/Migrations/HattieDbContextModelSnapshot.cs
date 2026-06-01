@@ -62,7 +62,7 @@ namespace HattieAI.Infrastructure.Migrations
                             Id = new Guid("00000000-0000-0000-0000-000000000001"),
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "admin@hattie.ai",
-                            PasswordHash = "A3aFfidnSdLfNj3oJlJ7xsFoeuVjJFU+VYNn90KIunGCf56s",
+                            PasswordHash = "qRib0c+6Qgc6j+1FmRRHs6VyXhdElC5W4eY3EpP3TLkw3Du/",
                             Role = "Admin",
                             TenantId = "",
                             Username = "admin"

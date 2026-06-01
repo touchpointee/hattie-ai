@@ -116,11 +116,11 @@ namespace HattieAI.Infrastructure.Persistence
             // Seed default Admin User
             var adminUser = new AppUser
             {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
-                Username = "admin",
-                Email = "admin@hattie.ai",
-                PasswordHash = PasswordSecurity.HashPassword("admin123"),
-                Role = "Admin",
+                Id = DefaultAdminAccount.Id,
+                Username = DefaultAdminAccount.Username,
+                Email = DefaultAdminAccount.Email,
+                PasswordHash = DefaultAdminAccount.PasswordHash,
+                Role = DefaultAdminAccount.Role,
                 TenantId = string.Empty,
                 CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
             };

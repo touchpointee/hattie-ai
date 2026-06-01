@@ -70,6 +70,7 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = services.GetRequiredService<HattieDbContext>();
         dbContext.Database.Migrate();
+        await DefaultAdminAccount.EnsureAsync(dbContext);
     }
     catch (Exception ex)
     {
