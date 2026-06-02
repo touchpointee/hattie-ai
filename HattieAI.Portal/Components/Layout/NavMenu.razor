@@ -7,12 +7,16 @@
                 <span class="nav-text">Dashboard</span>
             </NavLink>
         </div>
-        <div class="nav-item">
-            <NavLink class="nav-link" href="clients">
-                <i class="bi bi-people"></i>
-                <span class="nav-text">Clients</span>
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="clients">
+                        <i class="bi bi-people"></i>
+                        <span class="nav-text">Clients</span>
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
 
         <div class="nav-section">Operations</div>
         <div class="nav-item">

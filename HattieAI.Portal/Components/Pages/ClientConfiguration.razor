@@ -5,6 +5,7 @@
 @using Microsoft.EntityFrameworkCore
 @attribute [Authorize]
 @inject IDbContextFactory<HattieDbContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
 @rendermode InteractiveServer
 
 <PageTitle>Configuration | Hattie AI</PageTitle>
@@ -34,7 +35,10 @@
             <i class="bi bi-people"></i>
             <strong>No clients yet</strong>
             <span>Create a client before configuring chatbot languages or website access.</span>
-            <a href="clients" class="btn btn-primary mt-2">Create Client</a>
+            @if (isAdmin)
+            {
+                <a href="clients" class="btn btn-primary mt-2">Create Client</a>
+            }
         </div>
     }
     else
@@ -538,6 +542,8 @@
     private string languageSearch = "";
     private bool isLoading = true;
     private bool isSaving;
+    private bool isAdmin;
+    private string currentTenantId = string.Empty;
     private string successMessage = "";
     private string errorMessage = "";
 
@@ -558,14 +564,21 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isAdmin = user.IsInRole("Admin");
+        currentTenantId = user.FindFirst("TenantId")?.Value ?? string.Empty;
+
         using var context = DbFactory.CreateDbContext();
-        tenants = await context.Tenants
-            .IgnoreQueryFilters()
+        tenants = await GetAccessibleTenants(context)
             .Include(t => t.SupportedLanguages)
             .OrderBy(t => t.Name)
             .ToListAsync();
         allLanguages = await context.Languages.OrderBy(l => l.Name).ToListAsync();
         isLoading = false;
+
+        if (!isAdmin && tenants.Count == 1)
+            await SelectTenant(tenants[0].Id);
     }
 
     private async Task SelectTenant(Guid tenantId)
@@ -574,9 +587,8 @@
         errorMessage = "";
 
         using var context = DbFactory.CreateDbContext();
-        selectedTenant = await context.Tenants
+        selectedTenant = await GetAccessibleTenants(context)
             .Include(t => t.SupportedLanguages)
-            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(t => t.Id == tenantId);
 
         selectedLanguageCodes = selectedTenant?.SupportedLanguages.Select(l => l.Code).ToHashSet() ?? new();
@@ -667,9 +679,8 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var tenantToUpdate = await context.Tenants
+            var tenantToUpdate = await GetAccessibleTenants(context)
                 .Include(t => t.SupportedLanguages)
-                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(t => t.Id == selectedTenant.Id);
 
             if (tenantToUpdate == null)
@@ -732,5 +743,11 @@
         if (tenant.AllowedOrigins?.Any() == true)
             parts.Add($"{tenant.AllowedOrigins.Count} websites");
         return parts.Any() ? string.Join(" / ", parts) : "Needs setup";
+    }
+
+    private IQueryable<Tenant> GetAccessibleTenants(HattieDbContext context)
+    {
+        var tenantsQuery = context.Tenants.IgnoreQueryFilters();
+        return isAdmin ? tenantsQuery : tenantsQuery.Where(t => t.TenantId == currentTenantId);
     }
 }

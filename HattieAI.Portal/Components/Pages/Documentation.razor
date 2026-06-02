@@ -7,6 +7,7 @@
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @inject IConfiguration Configuration
 @inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
 @rendermode InteractiveServer
 
 <PageTitle>Documentation | Hattie AI</PageTitle>
@@ -355,13 +356,25 @@
     private string nextJsSnippet = "";
     private string wordPressSnippet = "";
     private string languageMigrationSnippet = "";
+    private bool isAdmin;
+    private string currentTenantId = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         chatbotPublicUrl = (Configuration["Chatbot:PublicUrl"] ?? NavigationFallback()).TrimEnd('/');
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isAdmin = user.IsInRole("Admin");
+        currentTenantId = user.FindFirst("TenantId")?.Value ?? string.Empty;
 
         using var context = DbFactory.CreateDbContext();
-        tenants = await context.Tenants.IgnoreQueryFilters().OrderBy(t => t.Name).ToListAsync();
+        var tenantsQuery = context.Tenants.IgnoreQueryFilters();
+        tenants = await (isAdmin ? tenantsQuery : tenantsQuery.Where(t => t.TenantId == currentTenantId))
+            .OrderBy(t => t.Name)
+            .ToListAsync();
+
+        if (!isAdmin && tenants.Count == 1)
+            selectedTenantId = tenants[0].Id.ToString();
 
         UpdateSnippets();
         languageMigrationSnippet = string.Join(Environment.NewLine, new[]

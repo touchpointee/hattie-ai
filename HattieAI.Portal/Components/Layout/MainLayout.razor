@@ -66,10 +66,14 @@
                     <i class="bi bi-question-circle"></i>
                     Docs
                 </a>
-                <a href="clients" class="btn btn-sm btn-primary">
-                    <i class="bi bi-plus-lg me-1"></i>
-                    Client
-                </a>
+                <AuthorizeView Roles="Admin">
+                    <Authorized>
+                        <a href="clients" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Client
+                        </a>
+                    </Authorized>
+                </AuthorizeView>
             </div>
         </header>
 

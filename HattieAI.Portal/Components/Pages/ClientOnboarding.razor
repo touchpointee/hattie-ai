@@ -3,7 +3,7 @@
 @using HattieAI.Infrastructure.Persistence
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin")]
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -50,6 +50,18 @@
                     <label class="form-label">Contact Email</label>
                     <InputText type="email" class="form-control" @bind-Value="newTenant.ContactEmail" placeholder="support@example.com" />
                     <small class="text-muted">Used when the bot cannot answer from the knowledge base.</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="form-label">Client Portal Username</label>
+                    <InputText class="form-control" @bind-Value="clientUsername" placeholder="acme-client" autocomplete="off" />
+                    <small class="text-muted">The client uses this username on the same login page.</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="form-label">Client Portal Password</label>
+                    <InputText type="password" class="form-control" @bind-Value="clientPassword" placeholder="Set client password" autocomplete="new-password" />
+                    <small class="text-muted">@(isEditing ? "Leave blank to keep the existing password." : "Required when creating a client.")</small>
                 </div>
 
                 <div class="form-group mb-3">
@@ -120,6 +132,7 @@
                         <tr>
                             <th>Name</th>
                             <th>Contact Info</th>
+                            <th>Portal Login</th>
                             <th>Welcome Greeting</th>
                             <th>Allowed Origins</th>
                             <th>Integration Link</th>
@@ -136,6 +149,9 @@
                                         <div class="fw-semibold">@tenant.ContactEmail</div>
                                         <div class="text-muted">Max Tokens: @tenant.MaxTokensPerSession</div>
                                     </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info-subtle text-info">@GetClientUsername(tenant)</span>
                                 </td>
                                 <td>
                                     <span class="text-truncate d-inline-block" style="max-width: 150px;" title="@tenant.WelcomeMessage">
@@ -173,7 +189,7 @@
                         @if (!tenants.Any())
                         {
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">No clients found.</td>
+                                <td colspan="7" class="text-center py-4 text-muted">No clients found.</td>
                             </tr>
                         }
                     </tbody>
@@ -348,11 +364,14 @@
 @code {
     private Tenant newTenant = new Tenant();
     private List<Tenant> tenants = new List<Tenant>();
+    private Dictionary<Guid, string> clientUsernames = new();
     private bool showSuccess = false;
     private string errorMessage = string.Empty;
     private bool isEditing = false;
     private bool isProcessing = false;
     private string allowedOriginsString = "";
+    private string clientUsername = "";
+    private string clientPassword = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -363,6 +382,16 @@
     {
         using var context = DbFactory.CreateDbContext();
         tenants = await context.Tenants.IgnoreQueryFilters().OrderByDescending(t => t.CreatedAt).ToListAsync();
+        var tenantIds = tenants.Select(t => t.TenantId).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+        var clientUsers = await context.AppUsers
+            .IgnoreQueryFilters()
+            .Where(u => u.Role == "Client" && tenantIds.Contains(u.TenantId))
+            .OrderBy(u => u.CreatedAt)
+            .ToListAsync();
+        clientUsernames = clientUsers
+            .Where(u => Guid.TryParse(u.TenantId, out _))
+            .GroupBy(u => Guid.Parse(u.TenantId))
+            .ToDictionary(g => g.Key, g => g.First().Username);
     }
 
     private async Task HandleValidSubmit()
@@ -386,6 +415,19 @@
             if (string.IsNullOrWhiteSpace(newTenant.Name))
             {
                 errorMessage = "Client name is required.";
+                return;
+            }
+
+            clientUsername = clientUsername.Trim();
+            if (string.IsNullOrWhiteSpace(clientUsername))
+            {
+                errorMessage = "Client portal username is required.";
+                return;
+            }
+
+            if (!isEditing && string.IsNullOrWhiteSpace(clientPassword))
+            {
+                errorMessage = "Client portal password is required.";
                 return;
             }
 
@@ -426,6 +468,28 @@
                 errorMessage = "A client with this name already exists. Please choose a different name.";
                 return;
             }
+
+            var tenantIdForLogin = isEditing ? newTenant.TenantId : newTenant.Id.ToString();
+            var usernameExists = await context.AppUsers
+                .IgnoreQueryFilters()
+                .AnyAsync(u => u.Username.ToLower() == clientUsername.ToLower() && u.TenantId != tenantIdForLogin);
+            if (usernameExists)
+            {
+                errorMessage = "This client portal username is already in use.";
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(newTenant.ContactEmail))
+            {
+                var emailExists = await context.AppUsers
+                    .IgnoreQueryFilters()
+                    .AnyAsync(u => u.Email.ToLower() == newTenant.ContactEmail.ToLower() && u.TenantId != tenantIdForLogin);
+                if (emailExists)
+                {
+                    errorMessage = "This contact email is already used by another portal login.";
+                    return;
+                }
+            }
             
             if (isEditing)
             {
@@ -438,6 +502,8 @@
                     existingTenant.MaxTokensPerSession = newTenant.MaxTokensPerSession;
                     existingTenant.SystemInstruction = newTenant.SystemInstruction;
                     existingTenant.AllowedOrigins = origins;
+                    if (!await UpsertClientUser(context, existingTenant.TenantId, clientPassword))
+                        return;
                     await context.SaveChangesAsync();
                 }
             }
@@ -449,6 +515,8 @@
                 newTenant.TenantId = newTenant.Id.ToString();
                 
                 context.Tenants.Add(newTenant);
+                if (!await UpsertClientUser(context, newTenant.TenantId, clientPassword))
+                    return;
                 await context.SaveChangesAsync();
             }
 
@@ -458,6 +526,8 @@
             // Reset form but keep success message visible for a moment
             newTenant = new Tenant(); 
             allowedOriginsString = "";
+            clientUsername = "";
+            clientPassword = "";
             isEditing = false;
             
             // Hide success message after 3 seconds
@@ -490,6 +560,8 @@
         allowedOriginsString = tenant.AllowedOrigins != null 
             ? string.Join(", ", tenant.AllowedOrigins) 
             : "";
+        clientUsername = GetClientUsername(tenant);
+        clientPassword = "";
             
         isEditing = true;
         showSuccess = false;
@@ -500,6 +572,8 @@
     {
         newTenant = new Tenant();
         allowedOriginsString = "";
+        clientUsername = "";
+        clientPassword = "";
         isEditing = false;
         showSuccess = false;
         errorMessage = string.Empty;
@@ -525,6 +599,48 @@
     {
         var publicUrl = GetChatbotPublicUrl();
         return $"<script src=\"{publicUrl}/assets/index.js\" data-tenant-id=\"{tenantId}\" data-api-url=\"{publicUrl}\" defer></script>";
+    }
+
+    private async Task<bool> UpsertClientUser(HattieDbContext context, string tenantId, string password)
+    {
+        var user = await context.AppUsers
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Role == "Client" && u.TenantId == tenantId);
+
+        if (user == null)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                errorMessage = "Set a password for the client portal login.";
+                return false;
+            }
+
+            context.AppUsers.Add(new AppUser
+            {
+                Id = Guid.NewGuid(),
+                Username = clientUsername,
+                Email = newTenant.ContactEmail,
+                PasswordHash = PasswordSecurity.HashPassword(password),
+                Role = "Client",
+                TenantId = tenantId
+            });
+            return true;
+        }
+
+        user.Username = clientUsername;
+        user.Email = newTenant.ContactEmail;
+        user.Role = "Client";
+        user.TenantId = tenantId;
+
+        if (!string.IsNullOrWhiteSpace(password))
+            user.PasswordHash = PasswordSecurity.HashPassword(password);
+
+        return true;
+    }
+
+    private string GetClientUsername(Tenant tenant)
+    {
+        return clientUsernames.TryGetValue(tenant.Id, out var username) ? username : "Not set";
     }
 
     private static string NormalizeOrigin(string origin)

@@ -21,7 +21,10 @@
         <div class="control-actions">
             <button class="btn btn-white btn-sm"><i class="bi bi-arrow-clockwise"></i></button>
             <button class="btn btn-white btn-sm"><i class="bi bi-download"></i> Export</button>
-            <a href="clients" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> New Client</a>
+            @if (canManageClients)
+            {
+                <a href="clients" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> New Client</a>
+            }
         </div>
     </div>
 
@@ -475,6 +478,7 @@
     private int languageCoverage;
     private string configurationSummary = "Configuration data is loading.";
     private string userName = "Admin";
+    private bool canManageClients;
     private List<Tenant> recentClients = new();
 
     protected override async Task OnInitializedAsync()
@@ -483,12 +487,21 @@
         var user = authState.User;
         if (user.Identity?.IsAuthenticated == true)
             userName = user.Identity.Name ?? "Admin";
+        var isAdmin = user.IsInRole("Admin");
+        canManageClients = isAdmin;
+        var tenantId = user.FindFirst("TenantId")?.Value ?? string.Empty;
 
         using var context = DbFactory.CreateDbContext();
         
-        var queryableTenants = context.Tenants.IgnoreQueryFilters();
-        var queryableSessions = context.ChatSessions.IgnoreQueryFilters();
-        var queryableMessages = context.ChatMessages.IgnoreQueryFilters();
+        var queryableTenants = isAdmin
+            ? context.Tenants.IgnoreQueryFilters()
+            : context.Tenants.IgnoreQueryFilters().Where(t => t.TenantId == tenantId);
+        var queryableSessions = isAdmin
+            ? context.ChatSessions.IgnoreQueryFilters()
+            : context.ChatSessions.IgnoreQueryFilters().Where(s => s.TenantId == tenantId);
+        var queryableMessages = isAdmin
+            ? context.ChatMessages.IgnoreQueryFilters()
+            : context.ChatMessages.IgnoreQueryFilters().Where(m => m.TenantId == tenantId);
 
         totalClients = await queryableTenants.CountAsync();
         totalSessions = await queryableSessions.CountAsync();
@@ -503,8 +516,7 @@
             .Where(t => !string.IsNullOrEmpty(t.KnowledgeBaseText))
             .CountAsync();
         clientsWithOrigins = await queryableTenants.CountAsync(t => t.AllowedOrigins.Count > 0);
-        clientsWithLanguages = await context.Tenants
-            .IgnoreQueryFilters()
+        clientsWithLanguages = await queryableTenants
             .Include(t => t.SupportedLanguages)
             .CountAsync(t => t.SupportedLanguages.Any());
 
@@ -528,6 +540,19 @@
             try 
             {
                 using var context = DbFactory.CreateDbContext();
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+                var isAdmin = user.IsInRole("Admin");
+                var tenantId = user.FindFirst("TenantId")?.Value ?? string.Empty;
+                var queryableSessions = isAdmin
+                    ? context.ChatSessions.IgnoreQueryFilters()
+                    : context.ChatSessions.IgnoreQueryFilters().Where(s => s.TenantId == tenantId);
+                var queryableMessages = isAdmin
+                    ? context.ChatMessages.IgnoreQueryFilters()
+                    : context.ChatMessages.IgnoreQueryFilters().Where(m => m.TenantId == tenantId);
+                var queryableTenants = isAdmin
+                    ? context.Tenants.IgnoreQueryFilters()
+                    : context.Tenants.IgnoreQueryFilters().Where(t => t.TenantId == tenantId);
                 
                 // --- 1. Fetch Real Data for Last 7 Days ---
                 var endDate = DateTime.UtcNow.Date;
@@ -538,17 +563,17 @@
                 // but for simplicity fetching all recent records and grouping in memory is lesser risk for small datasets
                 // For production with massive data, move grouping to DB.
                 
-                var sessionsRecent = await context.ChatSessions.IgnoreQueryFilters()
+                var sessionsRecent = await queryableSessions
                     .Where(s => s.CreatedAt >= startDate)
                     .Select(s => s.CreatedAt)
                     .ToListAsync();
 
-                var messagesRecent = await context.ChatMessages.IgnoreQueryFilters()
+                var messagesRecent = await queryableMessages
                     .Where(m => m.CreatedAt >= startDate)
                     .Select(m => new { m.CreatedAt, m.Role })
                     .ToListAsync();
                     
-                var tenantsRecent = await context.Tenants.IgnoreQueryFilters()
+                var tenantsRecent = await queryableTenants
                     .Where(t => t.CreatedAt >= startDate)
                     .Select(t => t.CreatedAt)
                     .ToListAsync();
@@ -573,8 +598,8 @@
                 }
 
                 // Interactive Breakdown (User vs Model)
-                var userMsgCount = await context.ChatMessages.IgnoreQueryFilters().CountAsync(m => m.Role == "user");
-                var aiMsgCount = await context.ChatMessages.IgnoreQueryFilters().CountAsync(m => m.Role == "model" || m.Role == "assistant"); // covering potential role names
+                var userMsgCount = await queryableMessages.CountAsync(m => m.Role == "user");
+                var aiMsgCount = await queryableMessages.CountAsync(m => m.Role == "model" || m.Role == "assistant"); // covering potential role names
                 var usageData = new[] { userMsgCount, aiMsgCount, 0 }; // Mobile is 0 for now
                 
                 // --- 3. Render Charts ---

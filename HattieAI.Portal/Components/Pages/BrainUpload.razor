@@ -7,6 +7,7 @@
 @attribute [Authorize]
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @inject DocumentBroker DocumentBroker
+@inject AuthenticationStateProvider AuthStateProvider
 @rendermode InteractiveServer
 
 <PageTitle>Knowledge Base | Hattie AI</PageTitle>
@@ -36,7 +37,10 @@
             <i class="bi bi-book"></i>
             <strong>No clients yet</strong>
             <span>Create a client before adding chatbot knowledge.</span>
-            <a href="clients" class="btn btn-primary mt-2">Create Client</a>
+            @if (isAdmin)
+            {
+                <a href="clients" class="btn btn-primary mt-2">Create Client</a>
+            }
         </div>
     }
     else
@@ -547,14 +551,27 @@
     private bool isLoading = true;
     private bool isProcessing;
     private bool isEditing;
+    private bool isAdmin;
+    private string currentTenantId = string.Empty;
     private KnowledgeWriteMode writeMode = KnowledgeWriteMode.Append;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isAdmin = user.IsInRole("Admin");
+        currentTenantId = user.FindFirst("TenantId")?.Value ?? string.Empty;
+
         using var context = DbFactory.CreateDbContext();
-        tenants = await context.Tenants.IgnoreQueryFilters().OrderBy(t => t.Name).ToListAsync();
+        tenants = await GetAccessibleTenants(context).OrderBy(t => t.Name).ToListAsync();
         clientsWithKnowledge = tenants.Count(t => !string.IsNullOrWhiteSpace(t.KnowledgeBaseText));
         isLoading = false;
+
+        if (!isAdmin && tenants.Count == 1)
+        {
+            selectedTenantId = tenants[0].Id.ToString();
+            await LoadCurrentKnowledge();
+        }
     }
 
     private async Task OnTenantSelected()
@@ -582,7 +599,7 @@
             return;
 
         using var context = DbFactory.CreateDbContext();
-        selectedTenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tenantGuid);
+        selectedTenant = await GetAccessibleTenants(context).FirstOrDefaultAsync(t => t.Id == tenantGuid);
         currentKnowledge = selectedTenant?.KnowledgeBaseText ?? string.Empty;
         chunkCount = selectedTenant == null
             ? 0
@@ -703,7 +720,7 @@
             return;
 
         using var context = DbFactory.CreateDbContext();
-        var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == selectedTenant.Id);
+        var tenant = await GetAccessibleTenants(context).FirstOrDefaultAsync(t => t.Id == selectedTenant.Id);
         if (tenant == null)
         {
             errorMessage = "Client no longer exists.";
@@ -823,6 +840,12 @@
     private static string GetInitial(string value)
     {
         return string.IsNullOrWhiteSpace(value) ? "?" : value.Trim()[0].ToString().ToUpperInvariant();
+    }
+
+    private IQueryable<Tenant> GetAccessibleTenants(HattieDbContext context)
+    {
+        var tenantsQuery = context.Tenants.IgnoreQueryFilters();
+        return isAdmin ? tenantsQuery : tenantsQuery.Where(t => t.TenantId == currentTenantId);
     }
 
     private enum KnowledgeWriteMode

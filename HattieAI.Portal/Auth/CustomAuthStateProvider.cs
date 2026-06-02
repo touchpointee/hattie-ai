@@ -47,7 +47,8 @@ namespace HattieAI.Portal.Auth
                 var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, userSession.UserName),
-                    new Claim(ClaimTypes.Role, userSession.Role)
+                    new Claim(ClaimTypes.Role, userSession.Role),
+                    new Claim("TenantId", userSession.TenantId)
                 }, "CustomAuth"));
 
                 _currentUser = claimsPrincipal;
@@ -71,7 +72,8 @@ namespace HattieAI.Portal.Auth
                 claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, userSession.UserName),
-                    new Claim(ClaimTypes.Role, userSession.Role)
+                    new Claim(ClaimTypes.Role, userSession.Role),
+                    new Claim("TenantId", userSession.TenantId)
                 }, "CustomAuth"));
                 _currentUser = claimsPrincipal;
             }
@@ -90,6 +92,7 @@ namespace HattieAI.Portal.Auth
     {
         public string UserName { get; set; } = string.Empty;
         public string Role { get; set; } = "User";
+        public string TenantId { get; set; } = string.Empty;
         public DateTime ExpiryTime { get; set; }
     }
 }

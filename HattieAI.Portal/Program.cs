@@ -123,7 +123,8 @@ app.MapPost("/auth/login", async (HttpContext httpContext, HattieDbContext conte
     var claims = new List<Claim>
     {
         new(ClaimTypes.Name, user.Username),
-        new(ClaimTypes.Role, user.Role)
+        new(ClaimTypes.Role, user.Role),
+        new("TenantId", user.TenantId)
     };
     var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
     var principal = new ClaimsPrincipal(identity);
