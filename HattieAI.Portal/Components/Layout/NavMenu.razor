@@ -1,3 +1,9 @@
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IDbContextFactory<HattieDbContext> DbFactory
+@using HattieAI.Infrastructure.Persistence
+@using Microsoft.EntityFrameworkCore
+@using System.Threading.Tasks
+
 <div class="nav-scrollable">
     <nav class="flex-column">
         <div class="nav-section">Workspace</div>
@@ -37,14 +43,54 @@
                 <span class="nav-text">Documentation</span>
             </NavLink>
         </div>
+
+        @if (isWhatsAppEnabled)
+        {
+            <div class="nav-section">WhatsApp Suite</div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="whatsapp-inbox">
+                    <i class="bi bi-chat-text"></i>
+                    <span class="nav-text">WhatsApp Inbox</span>
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="whatsapp-setup">
+                    <i class="bi bi-whatsapp"></i>
+                    <span class="nav-text">WhatsApp Setup</span>
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
+
+@code {
+    private bool isWhatsAppEnabled = false;
+    private bool isAdmin = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isAdmin = user.IsInRole("Admin");
+        var tenantId = user.FindFirst("TenantId")?.Value;
+
+        if (isAdmin)
+        {
+            isWhatsAppEnabled = true;
+        }
+        else if (!string.IsNullOrEmpty(tenantId))
+        {
+            using var context = DbFactory.CreateDbContext();
+            var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TenantId == tenantId);
+            isWhatsAppEnabled = tenant?.IsWhatsAppEnabled ?? false;
+        }
+    }
+}
 
 <style>
     .nav-scrollable {
         padding: 1rem 0.8rem;
     }
-
     .nav-section {
         color: rgba(255, 255, 255, 0.48);
         font-size: 0.7rem;

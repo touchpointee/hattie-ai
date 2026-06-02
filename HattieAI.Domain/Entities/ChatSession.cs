@@ -7,6 +7,8 @@ namespace HattieAI.Domain.Entities
     {
         public string UserId { get; set; } = string.Empty; // Or link to AppUser if strict FK needed
         public string Title { get; set; } = "New Chat";
+        public string Channel { get; set; } = "Website";
+        public string? ContactName { get; set; }
         public ICollection<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
     }
 }

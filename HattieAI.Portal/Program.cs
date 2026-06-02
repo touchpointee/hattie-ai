@@ -60,6 +60,7 @@ builder.Services.AddDbContextFactory<HattieDbContext>(options =>
 
 // Infrastructure Services
 builder.Services.AddHttpClient<GeminiBroker>();
+builder.Services.AddHttpClient<HattieAI.Infrastructure.WhatsApp.WhatsAppMetaService>();
 builder.Services.AddSingleton<DocumentBroker>();
 
 // Tenant Provider for Admin Portal

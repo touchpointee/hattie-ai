@@ -31,6 +31,8 @@ namespace HattieAI.Infrastructure.Persistence
         public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
         public DbSet<Language> Languages { get; set; } = null!;
         public DbSet<KnowledgeChunk> KnowledgeChunks { get; set; } = null!;
+        public DbSet<WhatsAppConfig> WhatsAppConfigs { get; set; } = null!;
+        public DbSet<WhatsAppAutomationRule> WhatsAppAutomationRules { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

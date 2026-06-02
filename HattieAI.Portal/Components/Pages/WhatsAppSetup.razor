@@ -1,0 +1,859 @@
+@page "/whatsapp-setup"
+@using HattieAI.Domain.Entities
+@using HattieAI.Infrastructure.Persistence
+@using HattieAI.Infrastructure.Security
+@using HattieAI.Infrastructure.WhatsApp
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+@inject IDbContextFactory<HattieDbContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject WhatsAppMetaService MetaService
+@inject IConfiguration Configuration
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>WhatsApp Setup | Hattie AI</PageTitle>
+
+<div class="portal-page">
+    <div class="page-heading">
+        <div>
+            <h1>WhatsApp Automation & Setup</h1>
+            <p class="text-muted">Configure your WhatsApp Business API and build automated keyword auto-replies.</p>
+        </div>
+        <div class="heading-actions">
+            @if (selectedTenant != null)
+            {
+                <span class="metric-pill">Client: @selectedTenant.Name</span>
+            }
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="state-panel">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span>Loading settings...</span>
+        </div>
+    }
+    else
+    {
+        @if (isAdmin && tenants.Count > 1)
+        {
+            <div class="card mb-4 select-tenant-card">
+                <div class="card-body d-flex align-items-center justify-content-between py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-buildings text-primary fs-5"></i>
+                        <span class="fw-semibold">Managing Tenant:</span>
+                        <select class="form-select form-select-sm d-inline-block w-auto border-0 shadow-none fw-bold text-primary" @onchange="OnTenantChanged">
+                            @foreach (var t in tenants)
+                            {
+                                <option value="@t.Id" selected="@(selectedTenantId == t.Id)">@t.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="setup-tabs mb-4">
+            <button class="tab-btn @(activeTab == "config" ? "active" : "")" @onclick='() => SetTab("config")'>
+                <i class="bi bi-gear-wide-connected me-1"></i> API Configuration
+            </button>
+            <button class="tab-btn @(activeTab == "rules" ? "active" : "")" @onclick='() => SetTab("rules")'>
+                <i class="bi bi-lightning-charge me-1"></i> Keyword Automations
+            </button>
+        </div>
+
+        @if (activeTab == "config")
+        {
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Alert Banners -->
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i> @successMessage
+                            <button type="button" class="btn-close" @onclick='() => successMessage = ""'></button>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+                            <button type="button" class="btn-close" @onclick='() => errorMessage = ""'></button>
+                        </div>
+                    }
+
+                    <!-- Connection Status Widget -->
+                    <div class="card status-card mb-4 @(status == "connected" ? "connected" : "disconnected")">
+                        <div class="card-body d-flex align-items-center justify-content-between p-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="status-indicator">
+                                    @if (status == "connected")
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success fs-3 animate-pulse"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-x-circle-fill text-danger fs-3"></i>
+                                    }
+                                </div>
+                                <div>
+                                    <h4 class="mb-1 fw-bold">@(status == "connected" ? "WhatsApp API Connected" : "WhatsApp API Disconnected")</h4>
+                                    <p class="mb-0 text-muted small">
+                                        @if (status == "connected")
+                                        {
+                                            <span>Active since @connectedAt?.ToLocalTime().ToString("g"). Verified Name: <strong>@verifiedPhoneName</strong></span>
+                                        }
+                                        else
+                                        {
+                                            <span>Configure your Meta API settings below to verify connection.</span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-outline-primary btn-sm" @onclick="TestConnection" disabled="@(isTesting || string.IsNullOrEmpty(phoneNumberId) || string.IsNullOrEmpty(accessToken))">
+                                    @if (isTesting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                        <span>Testing...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-arrow-repeat me-1"></i>
+                                        <span>Test Connection</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Config Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3><i class="bi bi-cloud-arrow-up-fill me-2"></i> Meta API Credentials</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Phone Number ID</label>
+                                <input type="text" class="form-control" @bind="phoneNumberId" placeholder="e.g. 100234567890123" />
+                                <small class="text-muted">Available in your Meta App Dashboard > WhatsApp > API Setup.</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">WhatsApp Business Account ID (Optional)</label>
+                                <input type="text" class="form-control" @bind="wabaId" placeholder="e.g. 100234567890456" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Permanent Access Token</label>
+                                <input type="password" class="form-control" @bind="accessToken" placeholder="Enter your Meta Access Token..." />
+                                @if (hasExistingConfig)
+                                {
+                                    <small class="text-muted text-success"><i class="bi bi-shield-check"></i> Encrypted token saved. Leave as-is or overwrite to update.</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">Required for making API calls to WhatsApp.</small>
+                                }
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Webhook Verify Token</label>
+                                <input type="text" class="form-control" @bind="verifyToken" placeholder="e.g. custom_verify_token_123" />
+                                <small class="text-muted">A secure string you choose. Must match the Verify Token configured in Facebook Webhook settings.</small>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" @onclick="SaveConfig" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                        <span>Saving...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-check-lg me-1"></i>
+                                        <span>Save Configuration</span>
+                                    }
+                                </button>
+                                @if (hasExistingConfig)
+                                {
+                                    <button class="btn btn-outline-danger" @onclick="DeleteConfig" disabled="@isSaving">
+                                        <i class="bi bi-trash me-1"></i> Clear Settings
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Webhook Callback Info -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="bi bi-link-45deg me-2"></i> Webhook Callback Configuration</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">Meta pings this URL whenever clients send you messages. Set this in the Meta App Dashboard under <strong>WhatsApp > Configuration</strong>.</p>
+                            
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted font-monospace text-xs">Callback URL</span>
+                                <input type="text" class="form-control font-monospace text-xs" value="@webhookUrl" readonly />
+                                <button class="btn btn-outline-secondary" @onclick="CopyWebhookUrl">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="mt-3 bg-light p-3 rounded border text-muted small">
+                                <h6 class="fw-bold mb-1"><i class="bi bi-info-circle text-info me-1"></i> Setup Guide:</h6>
+                                <ol class="ps-3 mb-0">
+                                    <li>Add the WhatsApp product in your Facebook App Dashboard.</li>
+                                    <li>Set the Callback URL above.</li>
+                                    <li>Set the Verify Token to match the one you saved here.</li>
+                                    <li>Click "Verify and save" on Meta.</li>
+                                    <li><strong>Critical:</strong> Subscribe to the <strong>messages</strong> Webhook field.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="card setup-info-card">
+                        <div class="card-header">
+                            <h3>Setup Checklist</h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush small">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>1. Register Meta Developer Account</span>
+                                    <span class="badge bg-success-subtle text-success">Done</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>2. Create Facebook App (Business)</span>
+                                    <span class="badge bg-success-subtle text-success">Done</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>3. Save API Settings here</span>
+                                    @if (hasExistingConfig)
+                                    {
+                                        <span class="badge bg-success-subtle text-success">Done</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning">Pending</span>
+                                    }
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>4. Configure Webhooks on Meta</span>
+                                    @if (status == "connected")
+                                    {
+                                        <span class="badge bg-success-subtle text-success">Verified</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary">Awaiting</span>
+                                    }
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (activeTab == "rules")
+        {
+            <div class="row">
+                <div class="col-md-5 mb-4">
+                    <!-- Rule Creator -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>
+                                <i class="bi @(isEditingRule ? "bi-pencil-square" : "bi-plus-circle") me-2"></i>
+                                @(isEditingRule ? "Edit Keyword Rule" : "Create New Rule")
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Trigger Keyword</label>
+                                <input type="text" class="form-control" @bind="ruleKeyword" placeholder="e.g. price" />
+                                <small class="text-muted">The exact word or snippet visitors type.</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Match Type</label>
+                                <select class="form-select" @bind="ruleMatchType">
+                                    <option value="Exact">Exact Match (Case-Insensitive)</option>
+                                    <option value="Contains">Contains Match (Case-Insensitive)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Auto-Reply Message</label>
+                                <textarea class="form-control" rows="4" @bind="ruleReplyText" placeholder="Write your automated text reply here..."></textarea>
+                                <small class="text-muted">Sent to the customer instantly.</small>
+                            </div>
+
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="ruleActive" @bind="ruleActive">
+                                <label class="form-check-label ms-1" for="ruleActive">Rule Active</label>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary flex-grow-1" @onclick="SaveRule" disabled="@(string.IsNullOrEmpty(ruleKeyword) || string.IsNullOrEmpty(ruleReplyText))">
+                                    <i class="bi bi-save me-1"></i> Save Rule
+                                </button>
+                                @if (isEditingRule)
+                                {
+                                    <button class="btn btn-outline-secondary" @onclick="CancelRuleEdit">
+                                        Cancel
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-7">
+                    <!-- Rules List -->
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h3><i class="bi bi-list-task me-2"></i> Automation Rules</h3>
+                            <span class="badge bg-secondary">@rules.Count Rules</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Keyword</th>
+                                            <th>Match</th>
+                                            <th>Reply</th>
+                                            <th>Status</th>
+                                            <th style="width: 140px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var rule in rules)
+                                        {
+                                            <tr>
+                                                <td class="fw-bold font-monospace text-primary">@rule.TriggerKeyword</td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark">@rule.MatchType</span>
+                                                </td>
+                                                <td class="text-truncate" style="max-width: 180px;" title="@rule.ReplyText">
+                                                    @rule.ReplyText
+                                                </td>
+                                                <td>
+                                                    @if (rule.IsActive)
+                                                    {
+                                                        <span class="badge bg-success-subtle text-success">Active</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary-subtle text-secondary">Disabled</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary py-1 px-2" @onclick="() => EditRule(rule)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger py-1 px-2" @onclick="() => DeleteRule(rule.Id)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                        @if (!rules.Any())
+                                        {
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4 text-muted">
+                                                    <i class="bi bi-lightning-charge fs-3 d-block mb-2 text-muted"></i>
+                                                    <span>No rules configured yet. Create one on the left.</span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .setup-tabs {
+        display: flex;
+        border-bottom: 2px solid var(--border-color);
+        gap: 1.5rem;
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        padding: 0.75rem 0.25rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+    }
+
+    .tab-btn:hover {
+        color: var(--primary-color);
+    }
+
+    .tab-btn.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    /* Connection Status Widget */
+    .status-card {
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+    }
+
+    .status-card.connected {
+        background: rgba(16, 185, 129, 0.04) !important;
+        border-color: rgba(16, 185, 129, 0.25) !important;
+    }
+
+    .status-card.disconnected {
+        background: rgba(220, 38, 38, 0.04) !important;
+        border-color: rgba(220, 38, 38, 0.25) !important;
+    }
+
+    .animate-pulse {
+        animation: pulse-animation 2s infinite;
+    }
+
+    @@keyframes pulse-animation {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .setup-info-card {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .select-tenant-card {
+        background-color: var(--surface-hover) !important;
+        border-color: var(--border-color) !important;
+    }
+
+    .select-tenant-card select {
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .font-monospace {
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .text-xs {
+        font-size: 0.8rem;
+    }
+</style>
+
+@code {
+    private string activeTab = "config";
+    private bool isLoading = true;
+    private bool isAdmin = false;
+    private string currentTenantId = string.Empty;
+    private List<Tenant> tenants = new();
+    private Guid selectedTenantId;
+    private Tenant? selectedTenant;
+
+    // Config form settings
+    private string phoneNumberId = "";
+    private string wabaId = "";
+    private string accessToken = "";
+    private string verifyToken = "";
+    private string status = "disconnected";
+    private DateTime? connectedAt;
+    private string verifiedPhoneName = "";
+    private bool hasExistingConfig = false;
+
+    private bool isSaving = false;
+    private bool isTesting = false;
+    private string successMessage = "";
+    private string errorMessage = "";
+    private string webhookUrl = "";
+
+    // Keyword Rules settings
+    private List<WhatsAppAutomationRule> rules = new();
+    private Guid editingRuleId = Guid.Empty;
+    private string ruleKeyword = "";
+    private string ruleMatchType = "Exact";
+    private string ruleReplyText = "";
+    private bool ruleActive = true;
+    private bool isEditingRule => editingRuleId != Guid.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isAdmin = user.IsInRole("Admin");
+        currentTenantId = user.FindFirst("TenantId")?.Value ?? string.Empty;
+
+        webhookUrl = $"{Navigation.BaseUri.TrimEnd('/')}/api/whatsapp/webhook";
+
+        using var context = DbFactory.CreateDbContext();
+        if (isAdmin)
+        {
+            tenants = await context.Tenants.IgnoreQueryFilters().OrderBy(t => t.Name).ToListAsync();
+            if (tenants.Any())
+            {
+                selectedTenantId = tenants[0].Id;
+                selectedTenant = tenants[0];
+            }
+        }
+        else if (!string.IsNullOrEmpty(currentTenantId))
+        {
+            selectedTenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TenantId == currentTenantId);
+            if (selectedTenant != null)
+            {
+                selectedTenantId = selectedTenant.Id;
+            }
+        }
+
+        await LoadTenantSettings();
+        isLoading = false;
+    }
+
+    private async Task LoadTenantSettings()
+    {
+        if (selectedTenant == null) return;
+
+        successMessage = "";
+        errorMessage = "";
+
+        using var context = DbFactory.CreateDbContext();
+        var config = await context.WhatsAppConfigs
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(c => c.TenantId == selectedTenant.Id.ToString());
+
+        if (config != null)
+        {
+            phoneNumberId = config.PhoneNumberId;
+            wabaId = config.WabaId ?? "";
+            status = config.Status;
+            connectedAt = config.ConnectedAt;
+            hasExistingConfig = true;
+            accessToken = "••••••••••••••••"; // Masked
+
+            var encryptionKey = Configuration["ENCRYPTION_KEY"] ?? Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? "";
+            if (!string.IsNullOrEmpty(config.VerifyToken) && !string.IsNullOrEmpty(encryptionKey))
+            {
+                try
+                {
+                    verifyToken = EncryptionHelper.Decrypt(config.VerifyToken, encryptionKey);
+                }
+                catch
+                {
+                    verifyToken = "";
+                }
+            }
+            else
+            {
+                verifyToken = "";
+            }
+        }
+        else
+        {
+            phoneNumberId = "";
+            wabaId = "";
+            accessToken = "";
+            verifyToken = "";
+            status = "disconnected";
+            connectedAt = null;
+            hasExistingConfig = false;
+        }
+
+        // Load Rules
+        rules = await context.WhatsAppAutomationRules
+            .IgnoreQueryFilters()
+            .Where(r => r.TenantId == selectedTenant.Id.ToString())
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        CancelRuleEdit();
+    }
+
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+        successMessage = "";
+        errorMessage = "";
+    }
+
+    private async Task OnTenantChanged(ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var parsedId))
+        {
+            selectedTenantId = parsedId;
+            selectedTenant = tenants.FirstOrDefault(t => t.Id == selectedTenantId);
+            await LoadTenantSettings();
+        }
+    }
+
+    private async Task TestConnection()
+    {
+        if (string.IsNullOrEmpty(phoneNumberId) || string.IsNullOrEmpty(accessToken)) return;
+
+        isTesting = true;
+        successMessage = "";
+        errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var encryptionKey = Configuration["ENCRYPTION_KEY"] ?? Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? "";
+            var testToken = accessToken;
+
+            if (testToken == "••••••••••••••••" && hasExistingConfig && selectedTenant != null)
+            {
+                using var context = DbFactory.CreateDbContext();
+                var config = await context.WhatsAppConfigs.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.TenantId == selectedTenant.Id.ToString());
+                if (config != null)
+                {
+                    testToken = EncryptionHelper.Decrypt(config.AccessToken, encryptionKey);
+                }
+            }
+
+            var phoneInfo = await MetaService.VerifyPhoneNumberAsync(phoneNumberId, testToken);
+            verifiedPhoneName = phoneInfo.VerifiedName;
+            status = "connected";
+            successMessage = $"Connection test succeeded! Verified Name: {phoneInfo.VerifiedName}, Display Number: {phoneInfo.DisplayPhoneNumber}";
+        }
+        catch (Exception ex)
+        {
+            status = "disconnected";
+            errorMessage = $"Connection test failed: {ex.Message}";
+        }
+        finally
+        {
+            isTesting = false;
+        }
+    }
+
+    private async Task SaveConfig()
+    {
+        if (selectedTenant == null) return;
+        if (string.IsNullOrEmpty(phoneNumberId) || string.IsNullOrEmpty(accessToken))
+        {
+            errorMessage = "Phone Number ID and Access Token are required.";
+            return;
+        }
+
+        isSaving = true;
+        successMessage = "";
+        errorMessage = "";
+
+        try
+        {
+            var encryptionKey = Configuration["ENCRYPTION_KEY"] ?? Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? "";
+            if (string.IsNullOrEmpty(encryptionKey))
+            {
+                errorMessage = "Encryption key (ENCRYPTION_KEY) is not set on the server.";
+                isSaving = false;
+                return;
+            }
+
+            var testToken = accessToken;
+            using var context = DbFactory.CreateDbContext();
+            var config = await context.WhatsAppConfigs.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.TenantId == selectedTenant.Id.ToString());
+
+            if (testToken == "••••••••••••••••")
+            {
+                if (config != null)
+                {
+                    testToken = EncryptionHelper.Decrypt(config.AccessToken, encryptionKey);
+                }
+                else
+                {
+                    errorMessage = "Access Token is required.";
+                    isSaving = false;
+                    return;
+                }
+            }
+
+            // Verify
+            var phoneInfo = await MetaService.VerifyPhoneNumberAsync(phoneNumberId, testToken);
+            verifiedPhoneName = phoneInfo.VerifiedName;
+
+            var encryptedAccessToken = EncryptionHelper.Encrypt(testToken, encryptionKey);
+            var encryptedVerifyToken = string.IsNullOrEmpty(verifyToken) ? "" : EncryptionHelper.Encrypt(verifyToken, encryptionKey);
+
+            if (config == null)
+            {
+                config = new WhatsAppConfig
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = selectedTenant.Id.ToString(),
+                    PhoneNumberId = phoneNumberId,
+                    WabaId = wabaId,
+                    AccessToken = encryptedAccessToken,
+                    VerifyToken = encryptedVerifyToken,
+                    Status = "connected",
+                    ConnectedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                };
+                context.WhatsAppConfigs.Add(config);
+            }
+            else
+            {
+                config.PhoneNumberId = phoneNumberId;
+                config.WabaId = wabaId;
+                config.AccessToken = encryptedAccessToken;
+                config.VerifyToken = encryptedVerifyToken;
+                config.Status = "connected";
+                config.ConnectedAt = DateTime.UtcNow;
+            }
+
+            await context.SaveChangesAsync();
+            status = "connected";
+            connectedAt = config.ConnectedAt;
+            hasExistingConfig = true;
+            accessToken = "••••••••••••••••";
+            successMessage = "WhatsApp Configuration saved and verified successfully!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save configuration: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteConfig()
+    {
+        if (selectedTenant == null) return;
+        
+        isSaving = true;
+        successMessage = "";
+        errorMessage = "";
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var config = await context.WhatsAppConfigs.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.TenantId == selectedTenant.Id.ToString());
+            if (config != null)
+            {
+                context.WhatsAppConfigs.Remove(config);
+                await context.SaveChangesAsync();
+            }
+
+            phoneNumberId = "";
+            wabaId = "";
+            accessToken = "";
+            verifyToken = "";
+            status = "disconnected";
+            connectedAt = null;
+            hasExistingConfig = false;
+            successMessage = "WhatsApp configuration cleared.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to clear configuration: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void EditRule(WhatsAppAutomationRule rule)
+    {
+        editingRuleId = rule.Id;
+        ruleKeyword = rule.TriggerKeyword;
+        ruleMatchType = rule.MatchType;
+        ruleReplyText = rule.ReplyText;
+        ruleActive = rule.IsActive;
+    }
+
+    private void CancelRuleEdit()
+    {
+        editingRuleId = Guid.Empty;
+        ruleKeyword = "";
+        ruleMatchType = "Exact";
+        ruleReplyText = "";
+        ruleActive = true;
+    }
+
+    private async Task SaveRule()
+    {
+        if (selectedTenant == null || string.IsNullOrEmpty(ruleKeyword) || string.IsNullOrEmpty(ruleReplyText)) return;
+
+        using var context = DbFactory.CreateDbContext();
+
+        if (editingRuleId == Guid.Empty)
+        {
+            var newRule = new WhatsAppAutomationRule
+            {
+                Id = Guid.NewGuid(),
+                TenantId = selectedTenant!.Id.ToString(),
+                TriggerKeyword = ruleKeyword.Trim(),
+                MatchType = ruleMatchType,
+                ReplyText = ruleReplyText.Trim(),
+                IsActive = ruleActive,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.WhatsAppAutomationRules.Add(newRule);
+        }
+        else
+        {
+            var rule = await context.WhatsAppAutomationRules.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == editingRuleId);
+            if (rule != null)
+            {
+                rule.TriggerKeyword = ruleKeyword.Trim();
+                rule.MatchType = ruleMatchType;
+                rule.ReplyText = ruleReplyText.Trim();
+                rule.IsActive = ruleActive;
+            }
+        }
+
+        await context.SaveChangesAsync();
+        
+        // Reload
+        rules = await context.WhatsAppAutomationRules
+            .IgnoreQueryFilters()
+            .Where(r => r.TenantId == selectedTenant!.Id.ToString())
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        CancelRuleEdit();
+    }
+
+    private async Task DeleteRule(Guid ruleId)
+    {
+        if (selectedTenant == null) return;
+        using var context = DbFactory.CreateDbContext();
+        var rule = await context.WhatsAppAutomationRules.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == ruleId);
+        if (rule != null)
+        {
+            context.WhatsAppAutomationRules.Remove(rule);
+            await context.SaveChangesAsync();
+        }
+
+        rules = await context.WhatsAppAutomationRules
+            .IgnoreQueryFilters()
+            .Where(r => r.TenantId == selectedTenant.Id.ToString())
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+    }
+
+    private async Task CopyWebhookUrl()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", webhookUrl);
+    }
+}

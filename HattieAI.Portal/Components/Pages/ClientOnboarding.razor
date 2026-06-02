@@ -88,6 +88,18 @@
                     <small class="text-muted">Comma-separated website origins. Include scheme, domain, and port when needed.</small>
                 </div>
 
+                <div class="form-group mb-4">
+                    <label class="form-label d-block">Enabled Channels</label>
+                    <div class="form-check form-check-inline d-inline-block me-3">
+                        <InputCheckbox id="isWebsiteChatbotEnabled" class="form-check-input" @bind-Value="newTenant.IsWebsiteChatbotEnabled" />
+                        <label class="form-check-label ms-1" for="isWebsiteChatbotEnabled">Website Chatbot</label>
+                    </div>
+                    <div class="form-check form-check-inline d-inline-block">
+                        <InputCheckbox id="isWhatsAppEnabled" class="form-check-input" @bind-Value="newTenant.IsWhatsAppEnabled" />
+                        <label class="form-check-label ms-1" for="isWhatsAppEnabled">WhatsApp Integration</label>
+                    </div>
+                </div>
+
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1" disabled="@isProcessing">
                         @if (isProcessing)
@@ -133,6 +145,7 @@
                             <th>Name</th>
                             <th>Contact Info</th>
                             <th>Portal Login</th>
+                            <th>Channels</th>
                             <th>Welcome Greeting</th>
                             <th>Allowed Origins</th>
                             <th>Integration Link</th>
@@ -152,6 +165,20 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-info-subtle text-info">@GetClientUsername(tenant)</span>
+                                </td>
+                                <td>
+                                    @if (tenant.IsWebsiteChatbotEnabled)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary me-1"><i class="bi bi-chat-dots-fill"></i> Web</span>
+                                    }
+                                    @if (tenant.IsWhatsAppEnabled)
+                                    {
+                                        <span class="badge bg-success-subtle text-success"><i class="bi bi-whatsapp"></i> WhatsApp</span>
+                                    }
+                                    @if (!tenant.IsWebsiteChatbotEnabled && !tenant.IsWhatsAppEnabled)
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary">None</span>
+                                    }
                                 </td>
                                 <td>
                                     <span class="text-truncate d-inline-block" style="max-width: 150px;" title="@tenant.WelcomeMessage">
@@ -502,6 +529,8 @@
                     existingTenant.MaxTokensPerSession = newTenant.MaxTokensPerSession;
                     existingTenant.SystemInstruction = newTenant.SystemInstruction;
                     existingTenant.AllowedOrigins = origins;
+                    existingTenant.IsWebsiteChatbotEnabled = newTenant.IsWebsiteChatbotEnabled;
+                    existingTenant.IsWhatsAppEnabled = newTenant.IsWhatsAppEnabled;
                     if (!await UpsertClientUser(context, existingTenant.TenantId, clientPassword))
                         return;
                     await context.SaveChangesAsync();
@@ -554,7 +583,9 @@
             SystemInstruction = tenant.SystemInstruction,
             CreatedAt = tenant.CreatedAt,
             KnowledgeBaseText = tenant.KnowledgeBaseText,
-            TenantId = tenant.TenantId
+            TenantId = tenant.TenantId,
+            IsWebsiteChatbotEnabled = tenant.IsWebsiteChatbotEnabled,
+            IsWhatsAppEnabled = tenant.IsWhatsAppEnabled
         };
         
         allowedOriginsString = tenant.AllowedOrigins != null 

@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @using HattieAI.Portal.Auth
 @using System.Security.Claims
 @inject AuthenticationStateProvider AuthStateProvider
@@ -140,12 +140,12 @@
     .brand-logo {
         width: 38px;
         height: 38px;
-        background: rgba(255,255,255,0.95);
+        background: var(--primary-gradient);
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        backdrop-filter: blur(4px);
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
     }
 
     .brand-logo img {

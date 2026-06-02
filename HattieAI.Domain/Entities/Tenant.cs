@@ -13,5 +13,7 @@ namespace HattieAI.Domain.Entities
         public string WelcomeMessage { get; set; } = "Hello! I am your AI Assistant.";
         public string ContactEmail { get; set; } = string.Empty;
         public int MaxTokensPerSession { get; set; } = 2000;
+        public bool IsWebsiteChatbotEnabled { get; set; } = true;
+        public bool IsWhatsAppEnabled { get; set; } = false;
     }
 }

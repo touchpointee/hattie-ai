@@ -37,6 +37,7 @@ builder.Services.AddCors(options =>
 
 // Infrastructure Services
 builder.Services.AddHttpClient<GroqBroker>();
+builder.Services.AddHttpClient<HattieAI.Infrastructure.WhatsApp.WhatsAppMetaService>();
 builder.Services.AddSingleton<DocumentBroker>();
 
 // Database
