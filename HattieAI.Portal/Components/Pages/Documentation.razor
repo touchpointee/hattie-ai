@@ -8,6 +8,7 @@
 @inject IConfiguration Configuration
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Documentation | Hattie AI</PageTitle>
@@ -16,21 +17,55 @@
     <div class="page-heading">
         <div>
             <h1>Documentation</h1>
-            <p>Operational guide for installing Hattie, configuring clients, languages, websites, and knowledge sources.</p>
+            @if (isAdmin)
+            {
+                <p>Operational guide for installing Hattie, configuring clients, languages, websites, and knowledge sources.</p>
+            }
+            else
+            {
+                <p>Learn how to embed Hattie chatbot on your website, set up WhatsApp automation, and manage your knowledge base.</p>
+            }
         </div>
         <div class="heading-actions">
-            <span class="metric-pill">@tenants.Count clients</span>
+            @if (isAdmin)
+            {
+                <span class="metric-pill">@tenants.Count clients</span>
+            }
+            else
+            {
+                <span class="metric-pill">Client: @selectedTenant?.Name</span>
+            }
             <span class="metric-pill">@chatbotPublicUrl</span>
         </div>
     </div>
 
+    @if (!isAdmin && selectedTenant?.IsWebsiteChatbotEnabled != true && selectedTenant?.IsWhatsAppEnabled != true)
+    {
+        <div class="state-panel">
+            <i class="bi bi-file-earmark-text"></i>
+            <strong>Documentation is not enabled</strong>
+            <span>Your client account does not have chatbot services enabled.</span>
+        </div>
+    }
+    else
+    {
     <div class="docs-layout">
         <aside class="docs-toc">
             <button type="button" @onclick='() => ScrollToSection("quick-start")'>Quick Start</button>
-            <button type="button" @onclick='() => ScrollToSection("embed")'>Website Embed</button>
-            <button type="button" @onclick='() => ScrollToSection("nextjs")'>Next.js</button>
-            <button type="button" @onclick='() => ScrollToSection("wordpress")'>WordPress</button>
-            <button type="button" @onclick='() => ScrollToSection("origins")'>Allowed Websites</button>
+            @if (isAdmin || selectedTenant?.IsWebsiteChatbotEnabled == true)
+            {
+                <button type="button" @onclick='() => ScrollToSection("embed")'>Website Embed</button>
+                <button type="button" @onclick='() => ScrollToSection("nextjs")'>Next.js</button>
+                <button type="button" @onclick='() => ScrollToSection("wordpress")'>WordPress</button>
+            }
+            @if (isAdmin || selectedTenant?.IsWhatsAppEnabled == true)
+            {
+                <button type="button" @onclick='() => ScrollToSection("whatsapp-config")'>WhatsApp Setup</button>
+            }
+            @if (isAdmin || selectedTenant?.IsWebsiteChatbotEnabled == true)
+            {
+                <button type="button" @onclick='() => ScrollToSection("origins")'>Allowed Websites</button>
+            }
             <button type="button" @onclick='() => ScrollToSection("languages")'>Languages</button>
             <button type="button" @onclick='() => ScrollToSection("knowledge")'>Knowledge Base</button>
             <button type="button" @onclick='() => ScrollToSection("troubleshooting")'>Troubleshooting</button>
@@ -43,84 +78,158 @@
                     <h2>Quick Start</h2>
                 </div>
                 <div class="step-grid">
-                    <div class="step-card">
-                        <strong>1. Create Client</strong>
-                        <span>Add client name, support email, welcome message, and AI instruction in Clients.</span>
-                    </div>
-                    <div class="step-card">
-                        <strong>2. Configure Access</strong>
-                        <span>Select languages and add allowed website origins in Configuration.</span>
-                    </div>
-                    <div class="step-card">
-                        <strong>3. Add Knowledge</strong>
-                        <span>Upload PDFs or paste verified text in Knowledge Base.</span>
-                    </div>
-                    <div class="step-card">
-                        <strong>4. Install Script</strong>
-                        <span>Copy the embed snippet into the website before the closing body tag.</span>
-                    </div>
+                    @if (isAdmin)
+                    {
+                        <div class="step-card">
+                            <strong>1. Create Client</strong>
+                            <span>Add client name, support email, welcome message, and AI instruction in Clients.</span>
+                        </div>
+                        <div class="step-card">
+                            <strong>2. Configure Access</strong>
+                            <span>Select languages and add allowed website origins in Configuration.</span>
+                        </div>
+                        <div class="step-card">
+                            <strong>3. Add Knowledge</strong>
+                            <span>Upload PDFs or paste verified text in Knowledge Base.</span>
+                        </div>
+                        <div class="step-card">
+                            <strong>4. Install Script</strong>
+                            <span>Copy the embed snippet into the website before the closing body tag.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="step-card">
+                            <strong>1. Configure Access</strong>
+                            <span>Manage languages and allowed website origins in Configuration.</span>
+                        </div>
+                        <div class="step-card">
+                            <strong>2. Add Knowledge</strong>
+                            <span>Upload PDFs or paste verified text in Knowledge Base to teach your chatbot.</span>
+                        </div>
+                        <div class="step-card">
+                            <strong>3. Install Widget</strong>
+                            <span>Copy the website embed HTML snippet and paste it into your site's code.</span>
+                        </div>
+                        <div class="step-card">
+                            <strong>4. Setup WhatsApp</strong>
+                            <span>Connect your Meta Business WhatsApp API in WhatsApp Setup to auto-reply to users.</span>
+                        </div>
+                    }
                 </div>
             </section>
 
-            <section id="embed" class="doc-section">
-                <div class="doc-section-header">
-                    <span class="doc-kicker">Website Install</span>
-                    <h2>Standard HTML, React, Vue, and Most Sites</h2>
-                    <p>Use this for normal websites and single-page apps. The tenant ID can come from the copied client snippet or from the client table.</p>
-                </div>
+            @if (isAdmin || selectedTenant?.IsWebsiteChatbotEnabled == true)
+            {
+                <section id="embed" class="doc-section">
+                    <div class="doc-section-header">
+                        <span class="doc-kicker">Website Install</span>
+                        <h2>Standard HTML, React, Vue, and Most Sites</h2>
+                        <p>Use this for normal websites and single-page apps. The tenant ID can come from the copied client snippet or from the client table.</p>
+                    </div>
 
-                <div class="snippet-toolbar">
-                    <select class="form-select" @bind="selectedTenantId" @bind:after="UpdateSnippets">
-                        <option value="">Use placeholder tenant</option>
-                        @foreach (var tenant in tenants)
+                    <div class="snippet-toolbar">
+                        @if (isAdmin)
                         {
-                            <option value="@tenant.Id">@tenant.Name</option>
+                            <select class="form-select" @bind="selectedTenantId" @bind:after="UpdateSnippets">
+                                <option value="">Use placeholder tenant</option>
+                                @foreach (var tenant in tenants)
+                                {
+                                    <option value="@tenant.Id">@tenant.Name</option>
+                                }
+                            </select>
                         }
-                    </select>
-                    <button class="btn btn-outline-primary" @onclick="() => CopyToClipboard(standardSnippet)">Copy HTML Snippet</button>
-                </div>
+                        else
+                        {
+                            <div class="selected-client-readonly">
+                                <i class="bi bi-building"></i>
+                                <span>@selectedTenant?.Name</span>
+                            </div>
+                        }
+                        <button class="btn btn-outline-primary" @onclick="() => CopyToClipboard(standardSnippet)">Copy HTML Snippet</button>
+                    </div>
 
-                <pre class="code-block"><code>@standardSnippet</code></pre>
+                    <pre class="code-block"><code>@standardSnippet</code></pre>
 
-                <div class="doc-note">
-                    <i class="bi bi-info-circle"></i>
-                    <span>The script supports <code>data-tenant-id</code> and <code>data-api-url</code>. This is the preferred install format because it avoids extra global script setup.</span>
-                </div>
-            </section>
+                    <div class="doc-note">
+                        <i class="bi bi-info-circle"></i>
+                        <span>The script supports <code>data-tenant-id</code> and <code>data-api-url</code>. This is the preferred install format because it avoids extra global script setup.</span>
+                    </div>
+                </section>
 
-            <section id="nextjs" class="doc-section">
-                <div class="doc-section-header">
-                    <span class="doc-kicker">Framework</span>
-                    <h2>Next.js App Router</h2>
-                    <p>Add this to <code>app/layout.tsx</code>. Load CSS in <code>head</code> and the chatbot script after the page becomes interactive.</p>
-                </div>
-                <button class="btn btn-outline-primary btn-sm mb-2" @onclick="() => CopyToClipboard(nextJsSnippet)">Copy Next.js Snippet</button>
-                <pre class="code-block"><code>@nextJsSnippet</code></pre>
-            </section>
+                <section id="nextjs" class="doc-section">
+                    <div class="doc-section-header">
+                        <span class="doc-kicker">Framework</span>
+                        <h2>Next.js App Router</h2>
+                        <p>Add this to <code>app/layout.tsx</code>. Load CSS in <code>head</code> and the chatbot script after the page becomes interactive.</p>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm mb-2" @onclick="() => CopyToClipboard(nextJsSnippet)">Copy Next.js Snippet</button>
+                    <pre class="code-block"><code>@nextJsSnippet</code></pre>
+                </section>
 
-            <section id="wordpress" class="doc-section">
-                <div class="doc-section-header">
-                    <span class="doc-kicker">CMS</span>
-                    <h2>WordPress</h2>
-                    <p>Use a header/footer code plugin or add the function to the active theme's <code>functions.php</code>.</p>
-                </div>
-                <button class="btn btn-outline-primary btn-sm mb-2" @onclick="() => CopyToClipboard(wordPressSnippet)">Copy WordPress Snippet</button>
-                <pre class="code-block"><code>@wordPressSnippet</code></pre>
-            </section>
+                <section id="wordpress" class="doc-section">
+                    <div class="doc-section-header">
+                        <span class="doc-kicker">CMS</span>
+                        <h2>WordPress</h2>
+                        <p>Use a header/footer code plugin or add the function to the active theme's <code>functions.php</code>.</p>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm mb-2" @onclick="() => CopyToClipboard(wordPressSnippet)">Copy WordPress Snippet</button>
+                    <pre class="code-block"><code>@wordPressSnippet</code></pre>
+                </section>
+            }
 
-            <section id="origins" class="doc-section">
-                <div class="doc-section-header">
-                    <span class="doc-kicker">Security</span>
-                    <h2>Allowed Websites</h2>
-                    <p>Allowed origins control which websites can connect to the chatbot API for a client.</p>
-                </div>
-                <div class="rule-list">
-                    <div><strong>Use origins only.</strong><span>Correct: <code>https://example.com</code>. Wrong: <code>https://example.com/page</code>.</span></div>
-                    <div><strong>Include ports for staging.</strong><span>Example: <code>https://staging.example.com:8443</code>.</span></div>
-                    <div><strong>Add production before launch.</strong><span>If no website is configured, local development may work but external usage should be treated as incomplete setup.</span></div>
-                    <div><strong>Subdomains are supported.</strong><span>An allowed root host can match subdomains in API CORS matching.</span></div>
-                </div>
-            </section>
+            @if (isAdmin || selectedTenant?.IsWhatsAppEnabled == true)
+            {
+                <section id="whatsapp-config" class="doc-section">
+                    <div class="doc-section-header">
+                        <span class="doc-kicker">WhatsApp Suite</span>
+                        <h2>WhatsApp Setup & Meta Configuration</h2>
+                        <p>Follow these steps to connect your WhatsApp Business API and start automating conversations.</p>
+                    </div>
+
+                    <div class="rule-list">
+                        <div>
+                            <strong>1. Meta Developer Registration</strong>
+                            <span>Sign up for a developer account at <a href="https://developers.facebook.com/" target="_blank">Meta for Developers</a> and create a Business App. Add the <strong>WhatsApp</strong> product to your app.</span>
+                        </div>
+                        <div>
+                            <strong>2. Retrieve API Credentials</strong>
+                            <span>Navigate to <strong>WhatsApp > API Setup</strong> in the Meta Dashboard. Retrieve your <strong>Phone Number ID</strong> and generate a permanent <strong>System User Access Token</strong>.</span>
+                        </div>
+                        <div>
+                            <strong>3. Save to Hattie Portal</strong>
+                            <span>Go to the <a href="whatsapp-setup">WhatsApp Setup</a> tab in the Hattie sidebar. Enter your <strong>Phone Number ID</strong> and <strong>Access Token</strong>. Select/generate a secure <strong>Webhook Verify Token</strong> of your choice and click <strong>Save Configuration</strong>.</span>
+                        </div>
+                        <div>
+                            <strong>4. Setup Meta Webhooks</strong>
+                            <span>In the Meta Developer Console, go to <strong>WhatsApp > Configuration</strong>. Click Edit next to Webhooks. Paste the following URL as your Callback URL: <br />
+                            <code class="font-monospace text-xs">@webhookUrl</code> <br />
+                            Enter the exact same <strong>Verify Token</strong> you chose in Step 3. Click <strong>Verify and Save</strong>.</span>
+                        </div>
+                        <div>
+                            <strong>5. Subscribe to Message Webhooks</strong>
+                            <span>On the same Meta Configuration page, click <strong>Manage</strong> next to Webhook Fields. Click <strong>Subscribe</strong> for the <strong>messages</strong> row. This is critical for Hattie to receive user queries!</span>
+                        </div>
+                    </div>
+                </section>
+            }
+
+            @if (isAdmin || selectedTenant?.IsWebsiteChatbotEnabled == true)
+            {
+                <section id="origins" class="doc-section">
+                    <div class="doc-section-header">
+                        <span class="doc-kicker">Security</span>
+                        <h2>Allowed Websites</h2>
+                        <p>Allowed origins control which websites can connect to the chatbot API for a client.</p>
+                    </div>
+                    <div class="rule-list">
+                        <div><strong>Use origins only.</strong><span>Correct: <code>https://example.com</code>. Wrong: <code>https://example.com/page</code>.</span></div>
+                        <div><strong>Include ports for staging.</strong><span>Example: <code>https://staging.example.com:8443</code>.</span></div>
+                        <div><strong>Add production before launch.</strong><span>If no website is configured, local development may work but external usage should be treated as incomplete setup.</span></div>
+                        <div><strong>Subdomains are supported.</strong><span>An allowed root host can match subdomains in API CORS matching.</span></div>
+                    </div>
+                </section>
+            }
 
             <section id="languages" class="doc-section">
                 <div class="doc-section-header">
@@ -131,11 +240,21 @@
                 <div class="rule-list">
                     <div><strong>Enable per client.</strong><span>Select only the languages the client wants visitors to use.</span></div>
                     <div><strong>Response language follows selection.</strong><span>The API instructs the AI to reply in the chosen language.</span></div>
-                    <div><strong>Adding new languages needs code and DB seed.</strong><span>Add the language in <code>HattieDbContext.cs</code>, create a migration, and add chatbot UI labels in <code>ChatInterface.tsx</code>.</span></div>
-                    <div><strong>Recommended baseline.</strong><span>Use Core languages first: English, Hindi, Arabic, Spanish, and French.</span></div>
+                    @if (isAdmin)
+                    {
+                        <div><strong>Adding new languages needs code and DB seed.</strong><span>Add the language in <code>HattieDbContext.cs</code>, create a migration, and add chatbot UI labels in <code>ChatInterface.tsx</code>.</span></div>
+                        <div><strong>Recommended baseline.</strong><span>Use Core languages first: English, Hindi, Arabic, Spanish, and French.</span></div>
+                    }
+                    else
+                    {
+                        <div><strong>Supported languages.</strong><span>Any selected language allows the chatbot to translate and chat with visitors in that language natively.</span></div>
+                    }
                 </div>
 
-                <pre class="code-block"><code>@languageMigrationSnippet</code></pre>
+                @if (isAdmin)
+                {
+                    <pre class="code-block"><code>@languageMigrationSnippet</code></pre>
+                }
             </section>
 
             <section id="knowledge" class="doc-section">
@@ -159,14 +278,17 @@
                     <h2>Troubleshooting</h2>
                 </div>
                 <div class="troubleshooting-grid">
-                    <div>
-                        <strong>Chatbot does not appear</strong>
-                        <span>Check the script URL, tenant ID, browser console, and whether <code>assets/index.css</code> and <code>assets/index.js</code> load successfully.</span>
-                    </div>
-                    <div>
-                        <strong>Chat connects locally but not on website</strong>
-                        <span>Add the website origin under Configuration and confirm <code>data-api-url</code> points to the public API URL.</span>
-                    </div>
+                    @if (isAdmin || selectedTenant?.IsWebsiteChatbotEnabled == true)
+                    {
+                        <div>
+                            <strong>Chatbot does not appear</strong>
+                            <span>Check the script URL, tenant ID, browser console, and whether <code>assets/index.css</code> and <code>assets/index.js</code> load successfully.</span>
+                        </div>
+                        <div>
+                            <strong>Chat connects locally but not on website</strong>
+                            <span>Add the website origin under Configuration and confirm <code>data-api-url</code> points to the public API URL.</span>
+                        </div>
+                    }
                     <div>
                         <strong>Language does not show</strong>
                         <span>Confirm the language is enabled for the selected client and exists in the seeded language table.</span>
@@ -179,8 +301,8 @@
             </section>
         </main>
     </div>
+    }
 </div>
-
 <style>
     .docs-layout {
         display: grid;
@@ -302,6 +424,57 @@
         margin-bottom: 0.75rem;
     }
 
+    .selected-client-readonly {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: #f8fafc;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-height: 42px;
+        padding: 0.55rem 0.75rem;
+        font-weight: 800;
+    }
+
+    .code-block {
+        margin: 0;
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        overflow: auto;
+        font-family: 'JetBrains Mono', Consolas, monospace;
+        font-size: 0.84rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    .doc-note {
+        display: grid;
+        grid-template-columns: 22px 1fr;
+        gap: 0.6rem;
+        align-items: start;
+        margin-top: 0.85rem;
+        border: 1px solid #bfdbfe;
+        background: #eff6ff;
+        color: #1e3a8a;
+        border-radius: 8px;
+        padding: 0.85rem;
+    }
+
+    .rule-list {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    @@media (max-width: 980px) {
+        .docs-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .docs-toc {
+
     .code-block {
         margin: 0;
         background: #0f172a;
@@ -364,10 +537,13 @@
     private string languageMigrationSnippet = "";
     private bool isAdmin;
     private string currentTenantId = string.Empty;
+    private Tenant? selectedTenant;
+    private string webhookUrl = "";
 
     protected override async Task OnInitializedAsync()
     {
         chatbotPublicUrl = (Configuration["Chatbot:PublicUrl"] ?? NavigationFallback()).TrimEnd('/');
+        webhookUrl = $"{Navigation.BaseUri.TrimEnd('/')}/api/whatsapp/webhook";
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         isAdmin = user.IsInRole("Admin");
@@ -375,12 +551,15 @@
 
         using var context = DbFactory.CreateDbContext();
         var tenantsQuery = context.Tenants.IgnoreQueryFilters();
-        tenants = await (isAdmin ? tenantsQuery : tenantsQuery.Where(t => t.TenantId == currentTenantId))
+        tenants = await (isAdmin ? tenantsQuery : tenantsQuery.Where(t => t.TenantId == currentTenantId || t.Id.ToString() == currentTenantId))
             .OrderBy(t => t.Name)
             .ToListAsync();
 
         if (!isAdmin && tenants.Count == 1)
+        {
+            selectedTenant = tenants[0];
             selectedTenantId = tenants[0].Id.ToString();
+        }
 
         UpdateSnippets();
         languageMigrationSnippet = string.Join(Environment.NewLine, new[]

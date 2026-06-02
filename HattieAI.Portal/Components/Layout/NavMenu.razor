@@ -24,25 +24,34 @@
             </Authorized>
         </AuthorizeView>
 
-        <div class="nav-section">Operations</div>
-        <div class="nav-item">
-            <NavLink class="nav-link" href="knowledge-base">
-                <i class="bi bi-book"></i>
-                <span class="nav-text">Knowledge Base</span>
-            </NavLink>
-        </div>
-        <div class="nav-item">
-            <NavLink class="nav-link" href="client-configuration">
-                <i class="bi bi-gear"></i>
-                <span class="nav-text">Configuration</span>
-            </NavLink>
-        </div>
-        <div class="nav-item">
-            <NavLink class="nav-link" href="documentation">
-                <i class="bi bi-file-earmark-text"></i>
-                <span class="nav-text">Documentation</span>
-            </NavLink>
-        </div>
+        @if (showOperationsSection)
+        {
+            <div class="nav-section">Operations</div>
+            @if (showKnowledgeBase)
+            {
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="knowledge-base">
+                        <i class="bi bi-book"></i>
+                        <span class="nav-text">Knowledge Base</span>
+                    </NavLink>
+                </div>
+            }
+            @if (showWebsiteChatbotTools)
+            {
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="client-configuration">
+                        <i class="bi bi-gear"></i>
+                        <span class="nav-text">Configuration</span>
+                    </NavLink>
+                </div>
+            }
+            <div class="nav-item">
+                <NavLink class="nav-link" href="documentation">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span class="nav-text">Documentation</span>
+                </NavLink>
+            </div>
+        }
         @if (showCrmInbox)
         {
             <div class="nav-item">
@@ -71,6 +80,9 @@
     private bool isWebsiteChatbotEnabled = false;
     private bool isAdmin = false;
     private bool isClientUser = false;
+    private bool showOperationsSection => isAdmin || isWebsiteChatbotEnabled || isWhatsAppEnabled;
+    private bool showKnowledgeBase => isAdmin || isWebsiteChatbotEnabled || isWhatsAppEnabled;
+    private bool showWebsiteChatbotTools => isAdmin || isWebsiteChatbotEnabled;
     private bool showWhatsAppSection => isAdmin || isWhatsAppEnabled;
     private bool showCrmInbox => isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled);
 
@@ -89,7 +101,7 @@
         else if (isClientUser && !string.IsNullOrEmpty(tenantId))
         {
             using var context = DbFactory.CreateDbContext();
-            var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TenantId == tenantId);
+            var tenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TenantId == tenantId || t.Id.ToString() == tenantId);
             isWhatsAppEnabled = tenant?.IsWhatsAppEnabled ?? false;
             isWebsiteChatbotEnabled = tenant?.IsWebsiteChatbotEnabled ?? false;
         }
