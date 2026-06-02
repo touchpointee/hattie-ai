@@ -489,17 +489,58 @@
     private async Task LoadTenants()
     {
         using var context = DbFactory.CreateDbContext();
+        
+        var allTenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
+        var allClientUsers = await context.AppUsers.IgnoreQueryFilters().Where(u => u.Role == "Client").ToListAsync();
+        bool dbUpdated = false;
+
+        foreach (var tenant in allTenants)
+        {
+            if (string.IsNullOrWhiteSpace(tenant.TenantId))
+            {
+                tenant.TenantId = tenant.Id.ToString();
+                dbUpdated = true;
+            }
+        }
+
+        foreach (var clientUser in allClientUsers)
+        {
+            var matchesTenant = allTenants.Any(t => t.Id.ToString() == clientUser.TenantId || t.TenantId == clientUser.TenantId);
+            if (!matchesTenant)
+            {
+                var matchedTenant = allTenants.FirstOrDefault(t => 
+                    !string.IsNullOrWhiteSpace(t.ContactEmail) && 
+                    t.ContactEmail.Equals(clientUser.Email, StringComparison.OrdinalIgnoreCase));
+                
+                if (matchedTenant != null)
+                {
+                    clientUser.TenantId = matchedTenant.TenantId;
+                    dbUpdated = true;
+                }
+            }
+        }
+
+        if (dbUpdated)
+        {
+            await context.SaveChangesAsync();
+        }
+
         tenants = await context.Tenants.IgnoreQueryFilters().OrderByDescending(t => t.CreatedAt).ToListAsync();
-        var tenantIds = tenants.Select(t => t.TenantId).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
-        var clientUsers = await context.AppUsers
+        var updatedClientUsers = await context.AppUsers
             .IgnoreQueryFilters()
-            .Where(u => u.Role == "Client" && tenantIds.Contains(u.TenantId))
-            .OrderBy(u => u.CreatedAt)
+            .Where(u => u.Role == "Client")
             .ToListAsync();
-        clientUsernames = clientUsers
-            .Where(u => Guid.TryParse(u.TenantId, out _))
-            .GroupBy(u => Guid.Parse(u.TenantId))
-            .ToDictionary(g => g.Key, g => g.First().Username);
+
+        clientUsernames = new Dictionary<Guid, string>();
+        foreach (var tenant in tenants)
+        {
+            var matchedUser = updatedClientUsers.FirstOrDefault(u => 
+                u.TenantId == tenant.Id.ToString() || u.TenantId == tenant.TenantId);
+            if (matchedUser != null)
+            {
+                clientUsernames[tenant.Id] = matchedUser.Username;
+            }
+        }
     }
 
     private async Task HandleValidSubmit()
@@ -620,6 +661,12 @@
                     existingTenant.AllowedOrigins = origins;
                     existingTenant.IsWebsiteChatbotEnabled = newTenant.IsWebsiteChatbotEnabled;
                     existingTenant.IsWhatsAppEnabled = newTenant.IsWhatsAppEnabled;
+                    
+                    if (string.IsNullOrWhiteSpace(existingTenant.TenantId))
+                    {
+                        existingTenant.TenantId = existingTenant.Id.ToString();
+                    }
+
                     if (!await UpsertClientUser(context, existingTenant.TenantId, clientPassword))
                         return;
                     await context.SaveChangesAsync();
