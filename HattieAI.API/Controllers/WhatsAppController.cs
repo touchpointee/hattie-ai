@@ -370,6 +370,9 @@ namespace HattieAI.API.Controllers
                                 }
 
                                 var tenantName = tenant.Name ?? "the system";
+                                var directContact = string.IsNullOrWhiteSpace(tenant.ContactPhone)
+                                    ? "the business phone number"
+                                    : tenant.ContactPhone;
                                 var supportedLanguagesList = tenant.SupportedLanguages != null && tenant.SupportedLanguages.Any()
                                     ? string.Join(", ", tenant.SupportedLanguages.Select(l => l.Name))
                                     : "English";
@@ -389,7 +392,7 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
 2. **VARY YOUR RESPONSES**: Never use the exact same phrase twice in a row.
 3. **BE NATURAL**: Speak like a real human assistant. Avoid robotic or hardcoded-sounding phrases.
 4. **CONTEXT IS KING**: For any question about {tenantName}, services, or products, you MUST derive your answer *only* from the provided Context.
-5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and suggest contacting the admin. (e.g., 'I'm not sure about that one...', 'That info isn't available to me...', etc. - translated to the detected language).
+5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and tell the user to connect directly at {directContact}. Do not suggest email or admin contact unless the phone number is unavailable.
 6. **NO FILLER**: Do NOT use phrases like 'I'd be happy to help', 'Great question', or 'Hello there'. Start the answer immediately.
 7. **SHORT ANSWERS**: Detailed essays are BANNED. Max 3 sentences or bullet points.
 8. **CLARIFY NATURALLY & CALMLY**: Maintain a calm, professional, polite, and customer-centric tone at all times. If the user's message is random or completely unclear, ask a specific question to understand their needs. Do NOT say 'That is a vague query'. Be helpful, polite, and human-like.";
@@ -409,8 +412,29 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                                     historyBuilder.AppendLine($"{hMsg.Role}: {hMsg.Content}");
                                 }
 
+                                var anticipatedInputTokens = TokenUsageGuard.EstimateTokens(systemInstruction, knowledgeBase, historyBuilder.ToString(), matchText);
+                                if (TokenUsageGuard.WouldExceedLimit(tenant, anticipatedInputTokens))
+                                {
+                                    var unavailableMessage = TokenUsageGuard.BuildUnavailableMessage(tenant);
+                                    await _metaService.SendTextMessageAsync(phoneNumberId, decryptedAccessToken, senderPhone, unavailableMessage);
+
+                                    _context.ChatMessages.Add(new ChatMessage
+                                    {
+                                        Id = Guid.NewGuid(),
+                                        ChatSessionId = session.Id,
+                                        Role = "model",
+                                        Content = unavailableMessage,
+                                        TenantId = config.TenantId,
+                                        CreatedAt = DateTime.UtcNow
+                                    });
+                                    await _context.SaveChangesAsync();
+                                    continue;
+                                }
+
                                 var aiResponse = await _groqBroker.GenerateResponseAsync(systemInstruction, knowledgeBase, historyBuilder.ToString(), matchText);
                                 _logger.LogInformation("AI generated response: {Response}", aiResponse);
+
+                                TokenUsageGuard.AddUsage(tenant, anticipatedInputTokens + TokenUsageGuard.EstimateTokens(aiResponse));
 
                                 // Send AI response via Meta API
                                 await _metaService.SendTextMessageAsync(phoneNumberId, decryptedAccessToken, senderPhone, aiResponse);

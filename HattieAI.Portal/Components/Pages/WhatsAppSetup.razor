@@ -37,6 +37,21 @@
             <span>Loading settings...</span>
         </div>
     }
+    else if (selectedTenant == null)
+    {
+        <div class="state-panel">
+            <i class="bi bi-whatsapp text-success fs-1 mb-2"></i>
+            <strong>No WhatsApp-enabled client selected</strong>
+            <span>Enable WhatsApp for a client before configuring Meta API settings and automations.</span>
+            @if (isAdmin)
+            {
+                <a href="clients" class="btn btn-primary mt-3">
+                    <i class="bi bi-people me-1"></i>
+                    Go to Clients
+                </a>
+            }
+        </div>
+    }
     else
     {
         @if (isAdmin && tenants.Count > 1)
@@ -508,7 +523,12 @@
         using var context = DbFactory.CreateDbContext();
         if (isAdmin)
         {
-            tenants = await context.Tenants.IgnoreQueryFilters().OrderBy(t => t.Name).ToListAsync();
+            tenants = await context.Tenants
+                .IgnoreQueryFilters()
+                .Where(t => t.IsWhatsAppEnabled)
+                .OrderBy(t => t.Name)
+                .ToListAsync();
+
             if (tenants.Any())
             {
                 selectedTenantId = tenants[0].Id;
@@ -517,7 +537,10 @@
         }
         else if (!string.IsNullOrEmpty(currentTenantId))
         {
-            selectedTenant = await context.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TenantId == currentTenantId);
+            selectedTenant = await context.Tenants
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.TenantId == currentTenantId && t.IsWhatsAppEnabled);
+
             if (selectedTenant != null)
             {
                 selectedTenantId = selectedTenant.Id;

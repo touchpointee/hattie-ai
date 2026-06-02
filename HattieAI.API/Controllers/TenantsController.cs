@@ -44,6 +44,9 @@ namespace HattieAI.API.Controllers
                 tenant.TenantId,
                 tenant.WelcomeMessage,
                 tenant.MaxTokensPerSession,
+                tenant.MonthlyTokenLimit,
+                tenant.MonthlyTokenUsage,
+                tenant.ContactPhone,
                 tenant.ContactEmail,
                 SupportedLanguages = tenant.SupportedLanguages.Select(l => new 
                 {
@@ -85,8 +88,12 @@ namespace HattieAI.API.Controllers
 
             existingTenant.Name = tenant.Name;
             existingTenant.ContactEmail = tenant.ContactEmail;
+            existingTenant.ContactPhone = tenant.ContactPhone;
             existingTenant.WelcomeMessage = tenant.WelcomeMessage;
             existingTenant.MaxTokensPerSession = tenant.MaxTokensPerSession;
+            existingTenant.MonthlyTokenLimit = tenant.MonthlyTokenLimit;
+            existingTenant.MonthlyTokenUsage = tenant.MonthlyTokenUsage;
+            existingTenant.TokenUsageMonthStartedAt = tenant.TokenUsageMonthStartedAt;
             existingTenant.SystemInstruction = tenant.SystemInstruction;
             existingTenant.SupportedLanguages = tenant.SupportedLanguages; // Handled by EF tracking if properly attached
 

@@ -12,7 +12,11 @@ namespace HattieAI.Domain.Entities
         public List<string> AllowedOrigins { get; set; } = new();
         public string WelcomeMessage { get; set; } = "Hello! I am your AI Assistant.";
         public string ContactEmail { get; set; } = string.Empty;
+        public string ContactPhone { get; set; } = string.Empty;
         public int MaxTokensPerSession { get; set; } = 2000;
+        public int MonthlyTokenLimit { get; set; } = 100000;
+        public int MonthlyTokenUsage { get; set; } = 0;
+        public DateTime TokenUsageMonthStartedAt { get; set; } = DateTime.UtcNow;
         public bool IsWebsiteChatbotEnabled { get; set; } = true;
         public bool IsWhatsAppEnabled { get; set; } = false;
     }

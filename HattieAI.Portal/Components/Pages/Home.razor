@@ -71,10 +71,10 @@
 
         <div class="kpi-card">
             <div class="kpi-content">
-                <span class="kpi-label">Knowledge Coverage</span>
+                <span class="kpi-label">Token Usage</span>
                 <div class="kpi-value-row">
-                    <span class="kpi-value">@knowledgeCoverage%</span>
-                    <span class="kpi-trend neutral">@clientsWithKnowledge of @totalClients</span>
+                    <span class="kpi-value">@totalMonthlyTokenUsage.ToString("N0")</span>
+                    <span class="kpi-trend neutral">@tokenUsagePercent% used</span>
                 </div>
             </div>
             <div class="kpi-chart">
@@ -128,7 +128,7 @@
                         <tr>
                             <th>Client</th>
                             <th>Status</th>
-                            <th>Integration</th>
+                            <th>Token Usage</th>
                             <th>Date</th>
                             <th></th>
                         </tr>
@@ -150,8 +150,11 @@
                                     </td>
                                     <td><span class="badge bg-success-subtle text-success">Active</span></td>
                                     <td>
-                                        <div class="progress" style="height: 4px; width: 60px;">
-                                            <div class="progress-bar bg-primary" role="progressbar" style="width: 75%"></div>
+                                        <div class="usage-mini">
+                                            <span>@client.MonthlyTokenUsage.ToString("N0") / @client.MonthlyTokenLimit.ToString("N0")</span>
+                                            <div class="progress" style="height: 4px; width: 110px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: @GetUsagePercent(client)%"></div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="text-muted small">@client.CreatedAt.ToLocalTime().ToString("MMM dd, HH:mm")</td>
@@ -452,6 +455,15 @@
         background-color: rgba(255, 255, 255, 0.05);
     }
 
+    .usage-mini {
+        display: grid;
+        gap: 0.3rem;
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
     @@media (max-width: 1200px) {
         .kpi-grid { grid-template-columns: repeat(2, 1fr); }
         .analytics-grid { grid-template-columns: 1fr; }
@@ -471,6 +483,9 @@
     private int clientsLast30Days;
     private int sessionsLast30Days;
     private int messagesLast30Days;
+    private int totalMonthlyTokenUsage;
+    private int totalMonthlyTokenLimit;
+    private int tokenUsagePercent;
     private int clientsWithOrigins;
     private int clientsWithLanguages;
     private int knowledgeCoverage;
@@ -506,6 +521,9 @@
         totalClients = await queryableTenants.CountAsync();
         totalSessions = await queryableSessions.CountAsync();
         totalMessages = await queryableMessages.CountAsync();
+        totalMonthlyTokenUsage = await queryableTenants.SumAsync(t => t.MonthlyTokenUsage);
+        totalMonthlyTokenLimit = await queryableTenants.SumAsync(t => t.MonthlyTokenLimit);
+        tokenUsagePercent = Percent(totalMonthlyTokenUsage, totalMonthlyTokenLimit);
 
         var last30Days = DateTime.UtcNow.AddDays(-30);
         clientsLast30Days = await queryableTenants.CountAsync(t => t.CreatedAt >= last30Days);
@@ -629,5 +647,13 @@
     {
         if (total <= 0) return 0;
         return (int)Math.Round(value * 100d / total);
+    }
+
+    private static int GetUsagePercent(Tenant tenant)
+    {
+        if (tenant.MonthlyTokenLimit <= 0)
+            return 100;
+
+        return Math.Clamp((int)Math.Round(tenant.MonthlyTokenUsage * 100d / tenant.MonthlyTokenLimit), 0, 100);
     }
 }

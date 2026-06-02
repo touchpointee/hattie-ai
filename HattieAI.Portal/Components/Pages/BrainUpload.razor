@@ -217,13 +217,16 @@
     }
 
     .knowledge-sidebar,
-    .knowledge-workspace,
     .source-panel,
     .editor-panel {
         background: var(--surface-color);
         border: 1px solid var(--border-color);
         border-radius: var(--border-radius);
         box-shadow: var(--shadow-sm);
+    }
+
+    .knowledge-workspace {
+        min-width: 0;
     }
 
     .knowledge-sidebar {
@@ -329,26 +332,22 @@
         font-weight: 700;
     }
 
-    .knowledge-workspace {
-        padding: 1rem;
-    }
-
     .workspace-grid {
         display: grid;
         grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
-        gap: 1rem;
+        gap: 1.1rem;
         align-items: stretch;
     }
 
     .source-panel,
     .editor-panel {
-        padding: 1rem;
+        padding: 1.1rem;
         min-width: 0;
     }
 
     .upload-zone {
         position: relative;
-        min-height: 150px;
+        min-height: 142px;
         border: 1px dashed #94a3b8;
         background: #f8fafc;
         border-radius: 8px;
@@ -402,7 +401,7 @@
     }
 
     .raw-input {
-        min-height: 180px;
+        min-height: 170px;
         resize: vertical;
     }
 
@@ -439,7 +438,7 @@
     .editor-panel {
         display: flex;
         flex-direction: column;
-        min-height: 680px;
+        min-height: 660px;
     }
 
     .editor-toolbar {
@@ -457,7 +456,7 @@
 
     .empty-editor {
         flex: 1;
-        min-height: 480px;
+        min-height: 460px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -482,7 +481,7 @@
     .knowledge-reader,
     .knowledge-editor {
         flex: 1;
-        min-height: 540px;
+        min-height: 520px;
         width: 100%;
         border: 1px solid var(--border-color);
         border-radius: 8px;

@@ -41,6 +41,12 @@ namespace HattieAI.API.Hubs
                      return;
                 }
 
+                if (!tenant.IsWebsiteChatbotEnabled)
+                {
+                     await Clients.Caller.SendAsync("ReceiveError", "Website chatbot is not enabled for this client.");
+                     return;
+                }
+
                 var languageCode = Context.GetHttpContext()?.Request.Query["language"].ToString() ?? "en";
                 var languageName = "English";
             
@@ -95,6 +101,9 @@ namespace HattieAI.API.Hubs
 
                 // 3. Construct Strict System Prompt
                 var tenantName = tenant.Name ?? "the system";
+                var directContact = string.IsNullOrWhiteSpace(tenant.ContactPhone)
+                    ? "the business phone number"
+                    : tenant.ContactPhone;
                 var systemInstruction = $@"You are a friendly, intelligent, and professional AI assistant for {tenantName}.
 
 **Your Mission:**
@@ -110,7 +119,7 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
 2. **VARY YOUR RESPONSES**: Never use the exact same phrase twice in a row.
 3. **BE NATURAL**: Speak like a real human assistant. Avoid robotic or hardcoded-sounding phrases.
 4. **CONTEXT IS KING**: For any question about {tenantName}, services, or products, you MUST derive your answer *only* from the provided Context.
-5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and suggest contacting the admin. (e.g., 'I'm not sure about that one...', 'That info isn't available to me...', etc. - translate this to {languageName} if needed).
+5. **NO HALLUCINATIONS**: If the answer is not in the Context, do NOT make it up. Instead, politely apologize and tell the user to connect directly at {directContact}. Do not suggest email or admin contact unless the phone number is unavailable.
 6. **NO FILLER**: Do NOT use phrases like 'I'd be happy to help', 'Great question', or 'Hello there'. Start the answer immediately.
 7. **SHORT ANSWERS**: Detailed essays are BANNED. Max 3 sentences or bullet points.
 8. **CLARIFY NATURALLY & CALMLY**: Maintain a calm, professional, polite, and customer-centric tone at all times. If the user's message is random or completely unclear, ask a specific question to understand their needs. Do NOT say 'That is a vague query'. Be helpful, polite, and human-like.";
@@ -125,6 +134,8 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                     {
                         Id = Guid.NewGuid(),
                         TenantId = tenantIdString,
+                        UserId = Context.ConnectionId,
+                        Channel = "Website",
                         Title = userMessage.Length > 20 ? userMessage.Substring(0, 20) + "..." : userMessage,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -143,6 +154,15 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                     }
 
                     session = existingSession;
+                    if (string.IsNullOrWhiteSpace(session.Channel))
+                    {
+                        session.Channel = "Website";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(session.UserId))
+                    {
+                        session.UserId = Context.ConnectionId;
+                    }
                 }
 
                 // 4. Fetch History (Before saving current message to avoid duplication in prompt)
@@ -175,6 +195,27 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                 _dbContext.ChatMessages.Add(userChatMsg);
                 await _dbContext.SaveChangesAsync();
 
+                var anticipatedInputTokens = TokenUsageGuard.EstimateTokens(systemInstruction, knowledgeBase, history, userMessage);
+                if (TokenUsageGuard.WouldExceedLimit(tenant, anticipatedInputTokens))
+                {
+                    var unavailableMessage = TokenUsageGuard.BuildUnavailableMessage(tenant);
+                    await Clients.Caller.SendAsync("ReceiveMessageStart");
+                    await Clients.Caller.SendAsync("ReceiveMessageChunk", unavailableMessage);
+                    await Clients.Caller.SendAsync("ReceiveMessageEnd");
+
+                    _dbContext.ChatMessages.Add(new ChatMessage
+                    {
+                        Id = Guid.NewGuid(),
+                        ChatSessionId = session.Id,
+                        Role = "model",
+                        Content = unavailableMessage,
+                        CreatedAt = DateTime.UtcNow,
+                        TenantId = tenantIdString
+                    });
+                    await _dbContext.SaveChangesAsync();
+                    return;
+                }
+
                 // 6. Call Groq with Strict Persona
                 await Clients.Caller.SendAsync("ReceiveMessageStart");
             
@@ -188,6 +229,8 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                 }
             
                 await Clients.Caller.SendAsync("ReceiveMessageEnd");
+
+                TokenUsageGuard.AddUsage(tenant, anticipatedInputTokens + TokenUsageGuard.EstimateTokens(fullResponse));
 
                 // 7. Save AI Message
                 var aiChatMsg = new ChatMessage

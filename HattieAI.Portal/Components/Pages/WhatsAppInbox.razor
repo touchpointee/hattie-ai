@@ -1,11 +1,12 @@
 @page "/whatsapp-inbox"
+@page "/crm-leads"
 @using HattieAI.Domain.Entities
 @using HattieAI.Infrastructure.Persistence
 @using HattieAI.Infrastructure.Security
 @using HattieAI.Infrastructure.WhatsApp
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Client")]
 @inject IDbContextFactory<HattieDbContext> DbFactory
 @inject AuthenticationStateProvider AuthStateProvider
 @inject WhatsAppMetaService MetaService
@@ -14,13 +15,13 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>WhatsApp Inbox | Hattie AI</PageTitle>
+<PageTitle>CRM Leads | Hattie AI</PageTitle>
 
 <div class="portal-page inbox-page-layout">
     <div class="inbox-sidebar">
-        <div class="sidebar-header">
-            <h3><i class="bi bi-chat-text-fill text-primary me-2"></i> WhatsApp CRM</h3>
-            <span class="badge bg-primary-subtle text-primary">@sessions.Count threads</span>
+        <div class="inbox-header">
+            <h3><i class="bi bi-person-lines-fill text-primary me-2"></i> CRM Leads</h3>
+            <span class="badge bg-primary-subtle text-primary">@sessions.Count leads</span>
         </div>
 
         @if (isAdmin && tenants.Count > 1)
@@ -35,23 +36,39 @@
             </div>
         }
 
+        @if (selectedTenant != null && availableChannels.Count > 1)
+        {
+            <div class="channel-filters">
+                <button type="button" class="channel-filter @(channelFilter == "All" ? "active" : "")" @onclick='() => SetChannelFilter("All")'>
+                    All
+                </button>
+                @foreach (var channel in availableChannels)
+                {
+                    <button type="button" class="channel-filter @(channelFilter == channel ? "active" : "")" @onclick="() => SetChannelFilter(channel)">
+                        @GetFilterLabel(channel)
+                    </button>
+                }
+            </div>
+        }
+
         <div class="thread-list">
             @foreach (var session in sessions)
             {
                 var lastMsg = lastMessages.TryGetValue(session.Id, out var msg) ? msg : "No messages";
                 var isSelected = activeSession?.Id == session.Id;
+                var sessionTitle = GetSessionTitle(session);
                 <button class="thread-row @(isSelected ? "active" : "")" @onclick="() => SelectSession(session)">
-                    <div class="thread-avatar">
-                        @GetAvatarText(session.ContactName ?? session.UserId)
+                    <div class="thread-avatar @GetChannelAvatarClass(session)">
+                        @GetAvatarText(sessionTitle)
                     </div>
                     <div class="thread-details">
                         <div class="d-flex justify-content-between align-items-baseline">
-                            <strong class="text-truncate">@(session.ContactName ?? session.UserId)</strong>
+                            <strong class="text-truncate">@sessionTitle</strong>
                             <small class="text-muted text-xxs">@session.CreatedAt.ToLocalTime().ToString("t")</small>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="last-message text-truncate text-muted">@lastMsg</span>
-                            <span class="phone-number text-xxs text-primary font-monospace">@session.UserId</span>
+                            <span class="source-chip @GetChannelBadgeClass(session)">Source: @GetLeadSourceLabel(session)</span>
                         </div>
                     </div>
                 </button>
@@ -60,7 +77,7 @@
             {
                 <div class="text-center py-5 text-muted small">
                     <i class="bi bi-chat-left-dots fs-3 mb-2 d-block text-muted"></i>
-                    <span>No active WhatsApp conversations.</span>
+                    <span>@GetEmptyStateMessage()</span>
                 </div>
             }
         </div>
@@ -70,21 +87,25 @@
         @if (activeSession == null)
         {
             <div class="state-panel embedded">
-                <i class="bi bi-whatsapp text-success fs-1 mb-2"></i>
-                <strong>Select a conversation</strong>
-                <span>Choose a customer thread from the sidebar to start chatting.</span>
+                <i class="bi bi-person-lines-fill text-primary fs-1 mb-2"></i>
+                <strong>Select a lead</strong>
+                <span>Choose a lead from the CRM list to view the chat history.</span>
             </div>
         }
         else
         {
+            var activeTitle = GetSessionTitle(activeSession!);
             <div class="chat-header">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="thread-avatar header-avatar">
-                        @GetAvatarText(activeSession.ContactName ?? activeSession.UserId)
+                    <div class="thread-avatar header-avatar @GetChannelAvatarClass(activeSession!)">
+                        @GetAvatarText(activeTitle)
                     </div>
                     <div>
-                        <h4 class="mb-0 fw-bold">@(activeSession.ContactName ?? activeSession.UserId)</h4>
-                        <span class="badge bg-light text-muted font-monospace text-xxs border">@activeSession.UserId</span>
+                        <h4 class="mb-1 fw-bold">@activeTitle</h4>
+                        <div class="session-meta">
+                            <span class="source-chip @GetChannelBadgeClass(activeSession!)">Source: @GetLeadSourceLabel(activeSession!)</span>
+                            <span class="session-id badge bg-light text-muted font-monospace text-xxs border">@GetSessionIdentifier(activeSession!)</span>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -107,7 +128,7 @@
                 }
                 @if (!activeMessages.Any())
                 {
-                    <div class="text-center py-5 text-muted">No messages found. Send one below!</div>
+                    <div class="text-center py-5 text-muted">No messages found for this lead.</div>
                 }
             </div>
 
@@ -120,19 +141,32 @@
                         <button type="button" class="btn-close text-xs" style="padding: 0.25rem 0.5rem;" @onclick='() => errorMessage = ""'></button>
                     </div>
                 }
-                <div class="input-row">
-                    <textarea class="form-control" rows="2" placeholder="Type your reply to @(activeSession.ContactName ?? activeSession.UserId)..." @bind="replyText" @onkeydown="HandleKeyDown" disabled="@isSending"></textarea>
-                    <button class="btn btn-primary send-btn" @onclick="SendMessage" disabled="@(isSending || string.IsNullOrWhiteSpace(replyText))">
-                        @if (isSending)
-                        {
-                            <span class="spinner-border spinner-border-sm" role="status"></span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-send-fill"></i>
-                        }
-                    </button>
-                </div>
+                @if (CanReplyToActiveSession)
+                {
+                    <div class="input-row">
+                        <textarea class="form-control" rows="2" placeholder="Type your WhatsApp reply to @activeTitle..." @bind="replyText" @onkeydown="HandleKeyDown" disabled="@isSending"></textarea>
+                        <button class="btn btn-primary send-btn" @onclick="SendMessage" disabled="@(isSending || string.IsNullOrWhiteSpace(replyText))">
+                            @if (isSending)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-send-fill"></i>
+                            }
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="crm-readonly-note">
+                        <i class="bi bi-info-circle text-primary"></i>
+                        <div>
+                            <strong>Website chatbot lead</strong>
+                            <span>This lead came from the website chatbot. The CRM keeps the customer history for follow-up.</span>
+                        </div>
+                    </div>
+                }
             </div>
         }
     </div>
@@ -162,8 +196,8 @@
         overflow: hidden;
     }
 
-    .sidebar-header {
-        padding: 1.2rem;
+    .inbox-header {
+        padding: 1rem;
         border-bottom: 1px solid var(--border-color);
         display: flex;
         justify-content: space-between;
@@ -171,10 +205,35 @@
         background: white;
     }
 
-    .sidebar-header h3 {
+    .inbox-header h3 {
         margin: 0;
-        font-size: 1.05rem;
+        font-size: 1rem;
         font-weight: 800;
+    }
+
+    .channel-filters {
+        display: flex;
+        gap: 0.4rem;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        background: white;
+    }
+
+    .channel-filter {
+        border: 1px solid var(--border-color);
+        background: #f8fafc;
+        color: var(--text-muted);
+        border-radius: 8px;
+        padding: 0.42rem 0.68rem;
+        font-size: 0.78rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .channel-filter.active {
+        background: #eff6ff;
+        color: #2563eb;
+        border-color: rgba(37, 99, 235, 0.32);
     }
 
     .thread-list {
@@ -190,8 +249,8 @@
         display: flex;
         align-items: center;
         gap: 0.8rem;
-        padding: 0.8rem;
-        border-radius: 10px;
+        padding: 0.75rem;
+        border-radius: 8px;
         text-align: left;
         color: var(--text-color);
         transition: all 0.2s ease;
@@ -208,9 +267,9 @@
     }
 
     .thread-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
         background: var(--primary-gradient);
         color: white;
         display: flex;
@@ -223,6 +282,14 @@
 
     .thread-row.active .thread-avatar {
         background: #2563eb;
+    }
+
+    .thread-avatar.whatsapp-avatar {
+        background: linear-gradient(135deg, #16a34a 0%, #0f766e 100%);
+    }
+
+    .thread-avatar.website-avatar {
+        background: var(--primary-gradient);
     }
 
     .thread-details {
@@ -243,6 +310,38 @@
         display: inline-block;
     }
 
+    .session-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .source-chip {
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.18rem 0.5rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+        border: 1px solid transparent;
+    }
+
+    .source-chip.website {
+        color: #1d4ed8;
+        background: #eff6ff;
+        border-color: rgba(37, 99, 235, 0.18);
+    }
+
+    .source-chip.whatsapp {
+        color: #047857;
+        background: #ecfdf5;
+        border-color: rgba(16, 185, 129, 0.22);
+    }
+
     .text-xxs {
         font-size: 0.7rem;
     }
@@ -257,7 +356,7 @@
     }
 
     .chat-header {
-        padding: 1rem 1.5rem;
+        padding: 1rem 1.25rem;
         border-bottom: 1px solid var(--border-color);
         display: flex;
         justify-content: space-between;
@@ -279,7 +378,7 @@
     .chat-messages-container {
         flex: 1;
         overflow-y: auto;
-        padding: 1.5rem;
+        padding: 1.25rem;
         background-color: #f1f5f9;
         display: flex;
         flex-direction: column;
@@ -302,7 +401,7 @@
     .message-bubble {
         max-width: 65%;
         padding: 0.75rem 1rem;
-        border-radius: 12px;
+        border-radius: 8px;
         position: relative;
         font-size: 0.95rem;
         line-height: 1.4;
@@ -338,7 +437,7 @@
 
     /* Footer */
     .chat-footer {
-        padding: 1.2rem;
+        padding: 1rem;
         border-top: 1px solid var(--border-color);
         background: white;
     }
@@ -366,6 +465,28 @@
         padding: 0 !important;
     }
 
+    .crm-readonly-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        border-radius: 8px;
+        background: #eff6ff;
+        color: var(--text-color);
+        font-size: 0.85rem;
+    }
+
+    .crm-readonly-note div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .crm-readonly-note span {
+        color: var(--text-muted);
+    }
+
     .text-xxs {
         font-size: 0.7rem;
     }
@@ -379,6 +500,38 @@
         background: transparent;
         height: 100%;
     }
+
+    @@media (max-width: 980px) {
+        .inbox-page-layout {
+            grid-template-columns: 280px 1fr;
+        }
+
+        .session-id {
+            display: none;
+        }
+    }
+
+    @@media (max-width: 760px) {
+        .inbox-page-layout {
+            grid-template-columns: 1fr;
+            height: auto;
+            min-height: calc(100vh - 140px);
+        }
+
+        .inbox-sidebar {
+            max-height: 320px;
+            border-right: 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .chat-viewport {
+            min-height: 520px;
+        }
+
+        .message-bubble {
+            max-width: 86%;
+        }
+    }
 </style>
 
 @code {
@@ -388,16 +541,19 @@
     private Guid selectedTenantId;
     private Tenant? selectedTenant;
 
-    // Chat threads list
+    // CRM lead list
     private List<ChatSession> sessions = new();
     private Dictionary<Guid, string> lastMessages = new();
+    private List<string> availableChannels = new();
+    private string channelFilter = "All";
 
-    // Active conversation
+    // Active lead
     private ChatSession? activeSession;
     private List<ChatMessage> activeMessages = new();
     private string replyText = "";
     private bool isSending = false;
     private string errorMessage = "";
+    private bool CanReplyToActiveSession => IsWhatsAppChannel(activeSession);
 
     private System.Threading.Timer? pollTimer;
 
@@ -411,7 +567,12 @@
         using var context = DbFactory.CreateDbContext();
         if (isAdmin)
         {
-            tenants = await context.Tenants.IgnoreQueryFilters().OrderBy(t => t.Name).ToListAsync();
+            tenants = await context.Tenants
+                .IgnoreQueryFilters()
+                .Where(t => t.IsWebsiteChatbotEnabled || t.IsWhatsAppEnabled)
+                .OrderBy(t => t.Name)
+                .ToListAsync();
+
             if (tenants.Any())
             {
                 selectedTenantId = tenants[0].Id;
@@ -442,23 +603,67 @@
 
     private async Task LoadTenantSessions()
     {
-        if (selectedTenant == null) return;
+        if (selectedTenant == null)
+        {
+            sessions.Clear();
+            lastMessages.Clear();
+            availableChannels.Clear();
+            activeSession = null;
+            activeMessages.Clear();
+            return;
+        }
+
+        availableChannels = GetEnabledChannels(selectedTenant);
+        if (!availableChannels.Contains(channelFilter) && channelFilter != "All")
+        {
+            channelFilter = "All";
+        }
+
+        if (!availableChannels.Any())
+        {
+            sessions.Clear();
+            lastMessages.Clear();
+            activeSession = null;
+            activeMessages.Clear();
+            return;
+        }
+
+        var tenantIdString = selectedTenant.Id.ToString();
+        var includeWebsite = selectedTenant.IsWebsiteChatbotEnabled;
+        var includeWhatsApp = selectedTenant.IsWhatsAppEnabled;
 
         using var context = DbFactory.CreateDbContext();
-        sessions = await context.ChatSessions
+        var query = context.ChatSessions
             .IgnoreQueryFilters()
-            .Where(s => s.TenantId == selectedTenant.Id.ToString() && s.Channel == "WhatsApp")
-            .OrderByDescending(s => s.CreatedAt)
-            .ToListAsync();
+            .Where(s => s.TenantId == tenantIdString);
+
+        if (channelFilter == "Website")
+        {
+            query = query.Where(s => includeWebsite && (s.Channel == "Website" || s.Channel == ""));
+        }
+        else if (channelFilter == "WhatsApp")
+        {
+            query = query.Where(s => includeWhatsApp && s.Channel == "WhatsApp");
+        }
+        else
+        {
+            query = query.Where(s =>
+                (includeWebsite && (s.Channel == "Website" || s.Channel == "")) ||
+                (includeWhatsApp && s.Channel == "WhatsApp"));
+        }
+
+        sessions = await query.OrderByDescending(s => s.CreatedAt).ToListAsync();
 
         // Get last message text for preview
         lastMessages.Clear();
         var sessionIds = sessions.Select(s => s.Id).ToList();
-        var messages = await context.ChatMessages
-            .IgnoreQueryFilters()
-            .Where(m => sessionIds.Contains(m.ChatSessionId))
-            .OrderBy(m => m.CreatedAt)
-            .ToListAsync();
+        var messages = sessionIds.Any()
+            ? await context.ChatMessages
+                .IgnoreQueryFilters()
+                .Where(m => sessionIds.Contains(m.ChatSessionId))
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync()
+            : new List<ChatMessage>();
 
         foreach (var session in sessions)
         {
@@ -489,10 +694,21 @@
         {
             selectedTenantId = parsedId;
             selectedTenant = tenants.FirstOrDefault(t => t.Id == selectedTenantId);
+            channelFilter = "All";
             activeSession = null;
             activeMessages.Clear();
             await LoadTenantSessions();
         }
+    }
+
+    private async Task SetChannelFilter(string channel)
+    {
+        channelFilter = channel;
+        activeSession = null;
+        activeMessages.Clear();
+        replyText = "";
+        errorMessage = "";
+        await LoadTenantSessions();
     }
 
     private async Task SelectSession(ChatSession session)
@@ -520,6 +736,11 @@
     private async Task SendMessage()
     {
         if (activeSession == null || string.IsNullOrWhiteSpace(replyText)) return;
+        if (!CanReplyToActiveSession)
+        {
+            errorMessage = "Manual replies are available for WhatsApp leads only.";
+            return;
+        }
 
         isSending = true;
         errorMessage = "";
@@ -585,10 +806,94 @@
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !e.ShiftKey)
+        if (CanReplyToActiveSession && e.Key == "Enter" && !e.ShiftKey)
         {
             await SendMessage();
         }
+    }
+
+    private static List<string> GetEnabledChannels(Tenant tenant)
+    {
+        var channels = new List<string>();
+        if (tenant.IsWebsiteChatbotEnabled)
+        {
+            channels.Add("Website");
+        }
+
+        if (tenant.IsWhatsAppEnabled)
+        {
+            channels.Add("WhatsApp");
+        }
+
+        return channels;
+    }
+
+    private static bool IsWhatsAppChannel(ChatSession? session)
+    {
+        return string.Equals(session?.Channel, "WhatsApp", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetLeadSourceLabel(ChatSession session)
+    {
+        return IsWhatsAppChannel(session) ? "WhatsApp" : "Website Chatbot";
+    }
+
+    private static string GetFilterLabel(string channel)
+    {
+        return channel == "Website" ? "Website Chatbot" : channel;
+    }
+
+    private static string GetChannelBadgeClass(ChatSession session)
+    {
+        return IsWhatsAppChannel(session) ? "whatsapp" : "website";
+    }
+
+    private static string GetChannelAvatarClass(ChatSession session)
+    {
+        return IsWhatsAppChannel(session) ? "whatsapp-avatar" : "website-avatar";
+    }
+
+    private static string GetSessionTitle(ChatSession session)
+    {
+        if (!string.IsNullOrWhiteSpace(session.ContactName))
+        {
+            return session.ContactName;
+        }
+
+        if (IsWhatsAppChannel(session) && !string.IsNullOrWhiteSpace(session.UserId))
+        {
+            return session.UserId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(session.Title) && session.Title != "New Chat")
+        {
+            return session.Title;
+        }
+
+        return IsWhatsAppChannel(session) ? "WhatsApp contact" : "Website visitor";
+    }
+
+    private static string GetSessionIdentifier(ChatSession session)
+    {
+        if (IsWhatsAppChannel(session) && !string.IsNullOrWhiteSpace(session.UserId))
+        {
+            return session.UserId;
+        }
+
+        var id = session.Id.ToString("N");
+        return $"Session {id.Substring(0, 8)}";
+    }
+
+    private string GetEmptyStateMessage()
+    {
+        if (selectedTenant == null || !availableChannels.Any())
+        {
+            return "CRM is not enabled for this account.";
+        }
+
+        return channelFilter == "All"
+            ? "No leads found yet."
+            : $"No {GetFilterLabel(channelFilter)} leads found yet.";
     }
 
     private static string GetAvatarText(string value)

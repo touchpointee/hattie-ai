@@ -26,14 +26,14 @@
 
     <div class="docs-layout">
         <aside class="docs-toc">
-            <a href="#quick-start">Quick Start</a>
-            <a href="#embed">Website Embed</a>
-            <a href="#nextjs">Next.js</a>
-            <a href="#wordpress">WordPress</a>
-            <a href="#origins">Allowed Websites</a>
-            <a href="#languages">Languages</a>
-            <a href="#knowledge">Knowledge Base</a>
-            <a href="#troubleshooting">Troubleshooting</a>
+            <button type="button" @onclick='() => ScrollToSection("quick-start")'>Quick Start</button>
+            <button type="button" @onclick='() => ScrollToSection("embed")'>Website Embed</button>
+            <button type="button" @onclick='() => ScrollToSection("nextjs")'>Next.js</button>
+            <button type="button" @onclick='() => ScrollToSection("wordpress")'>WordPress</button>
+            <button type="button" @onclick='() => ScrollToSection("origins")'>Allowed Websites</button>
+            <button type="button" @onclick='() => ScrollToSection("languages")'>Languages</button>
+            <button type="button" @onclick='() => ScrollToSection("knowledge")'>Knowledge Base</button>
+            <button type="button" @onclick='() => ScrollToSection("troubleshooting")'>Troubleshooting</button>
         </aside>
 
         <main class="docs-content">
@@ -201,18 +201,24 @@
         gap: 0.25rem;
     }
 
-    .docs-toc a {
+    .docs-toc button {
+        appearance: none;
+        border: 0;
+        background: transparent;
         color: var(--text-muted);
         text-decoration: none;
         border-radius: 8px;
         padding: 0.65rem 0.75rem;
         font-weight: 800;
         font-size: 0.9rem;
+        text-align: left;
     }
 
-    .docs-toc a:hover {
+    .docs-toc button:hover,
+    .docs-toc button:focus-visible {
         background: #eff6ff;
         color: var(--primary-dark);
+        outline: none;
     }
 
     .docs-content {
@@ -440,6 +446,11 @@
     private async Task CopyToClipboard(string value)
     {
         await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", value);
+    }
+
+    private async Task ScrollToSection(string sectionId)
+    {
+        await JSRuntime.InvokeVoidAsync("window.portalUi.scrollToId", sectionId);
     }
 
     private static string NavigationFallback()
