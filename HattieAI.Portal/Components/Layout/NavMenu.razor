@@ -51,13 +51,31 @@
                     <span class="nav-text">Documentation</span>
                 </NavLink>
             </div>
+            @if (showApiIntegrations)
+            {
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="api-integrations">
+                        <i class="bi bi-plug"></i>
+                        <span class="nav-text">API Integrations</span>
+                    </NavLink>
+                </div>
+            }
         }
         @if (showCrmInbox)
         {
             <div class="nav-item">
-                <NavLink class="nav-link" href="crm-leads">
+                <NavLink class="nav-link" href="chats">
                     <i class="bi bi-chat-text"></i>
-                    <span class="nav-text">CRM Leads</span>
+                    <span class="nav-text">Chats</span>
+                </NavLink>
+            </div>
+        }
+        @if (showCrm)
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="crm">
+                    <i class="bi bi-kanban"></i>
+                    <span class="nav-text">CRM Kanban</span>
                 </NavLink>
             </div>
         }
@@ -84,7 +102,9 @@
     private bool showKnowledgeBase => isAdmin || isWebsiteChatbotEnabled || isWhatsAppEnabled;
     private bool showWebsiteChatbotTools => isAdmin || isWebsiteChatbotEnabled;
     private bool showWhatsAppSection => isAdmin || isWhatsAppEnabled;
-    private bool showCrmInbox => isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled);
+    private bool showCrmInbox => isAdmin || (isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled));
+    private bool showCrm => isAdmin || (isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled));
+    private bool showApiIntegrations => isAdmin || (isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled));
 
     protected override async Task OnInitializedAsync()
     {

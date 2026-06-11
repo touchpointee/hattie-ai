@@ -52,7 +52,7 @@ window.dashboardChart = {
                     legend: {
                         position: 'top',
                         align: 'end',
-                        labels: { usePointStyle: true, boxWidth: 8 }
+                        labels: { usePointStyle: true, boxWidth: 8, color: '#64748b' }
                     },
                     tooltip: {
                         mode: 'index',
@@ -66,10 +66,12 @@ window.dashboardChart = {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.05)' }
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { color: '#64748b' }
                     },
                     x: {
-                        grid: { display: false }
+                        grid: { display: false },
+                        ticks: { color: '#64748b' }
                     }
                 },
                 interaction: {
@@ -104,7 +106,7 @@ window.dashboardChart = {
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { usePointStyle: true, padding: 20 }
+                        labels: { usePointStyle: true, padding: 20, color: '#64748b' }
                     }
                 }
             }

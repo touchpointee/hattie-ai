@@ -370,13 +370,14 @@ body {
 }
 
 @media (max-width: 760px) {
-    .page-heading {
-        align-items: flex-start;
-        flex-direction: column;
+    .page-heading,
+    .page-header {
+        align-items: flex-start !important;
+        flex-direction: column !important;
     }
 
     .heading-actions {
-        justify-content: flex-start;
+        justify-content: flex-start !important;
     }
 }
 

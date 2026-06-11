@@ -33,6 +33,8 @@ namespace HattieAI.Infrastructure.Persistence
         public DbSet<KnowledgeChunk> KnowledgeChunks { get; set; } = null!;
         public DbSet<WhatsAppConfig> WhatsAppConfigs { get; set; } = null!;
         public DbSet<WhatsAppAutomationRule> WhatsAppAutomationRules { get; set; } = null!;
+        public DbSet<Lead> Leads { get; set; } = null!;
+        public DbSet<ApiIntegration> ApiIntegrations { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

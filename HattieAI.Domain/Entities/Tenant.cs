@@ -19,5 +19,7 @@ namespace HattieAI.Domain.Entities
         public DateTime TokenUsageMonthStartedAt { get; set; } = DateTime.UtcNow;
         public bool IsWebsiteChatbotEnabled { get; set; } = true;
         public bool IsWhatsAppEnabled { get; set; } = false;
+        public bool IsLeadCollectionEnabled { get; set; } = false;
+        public string LeadCollectionInstruction { get; set; } = "Collect the visitor's name, email, phone number, and any company information when they ask to be contacted or express business interest.";
     }
 }

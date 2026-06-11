@@ -64,6 +64,18 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const signalRRef = useRef<SignalRService | null>(null);
     const currentAiMessageRef = useRef<string>("");
+    const inactivityTimeoutRef = useRef<any>(null);
+
+    const resetInactivityTimer = () => {
+        if (inactivityTimeoutRef.current) {
+            clearTimeout(inactivityTimeoutRef.current);
+        }
+        inactivityTimeoutRef.current = setTimeout(() => {
+            console.log("Session cleared due to 10 minutes of inactivity.");
+            setSessionId(null);
+            setMessages([]);
+        }, 10 * 60 * 1000);
+    };
 
     let apiUrl = (window as any).HattieAI?.apiUrl || import.meta.env.VITE_API_URL;
 
@@ -75,6 +87,8 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
     const logoUrl = import.meta.env.DEV ? '/hattie.png' : `${apiUrl}/hattie.png`;
 
     useEffect(() => {
+        resetInactivityTimer();
+
         fetch(`${apiUrl}/api/tenants/${chatbotId}`)
             .then(res => res.json())
             .then(data => {
@@ -104,6 +118,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
                 }]);
             },
             onMessageChunk: (chunk: string) => {
+                resetInactivityTimer();
                 currentAiMessageRef.current += chunk;
 
                 // Check for specific backend error message that might be streamed as content
@@ -138,6 +153,9 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
         service.start();
 
         return () => {
+            if (inactivityTimeoutRef.current) {
+                clearTimeout(inactivityTimeoutRef.current);
+            }
             if (service && typeof service.stop === 'function') {
                 service.stop();
             }
@@ -169,6 +187,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }: Props) {
 
         // Send via SignalR
         if (signalRRef.current) {
+            resetInactivityTimer();
             await signalRRef.current.sendMessage(userMessage, sessionId);
         }
     }

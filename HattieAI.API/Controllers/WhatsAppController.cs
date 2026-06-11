@@ -27,19 +27,25 @@ namespace HattieAI.API.Controllers
         private readonly GroqBroker _groqBroker;
         private readonly IConfiguration _configuration;
         private readonly ILogger<WhatsAppController> _logger;
+        private readonly LeadExtractionService _leadExtractionService;
+        private readonly ApiExecutionService _apiExecutionService;
 
         public WhatsAppController(
             HattieDbContext context,
             WhatsAppMetaService metaService,
             GroqBroker groqBroker,
             IConfiguration configuration,
-            ILogger<WhatsAppController> logger)
+            ILogger<WhatsAppController> logger,
+            LeadExtractionService leadExtractionService,
+            ApiExecutionService apiExecutionService)
         {
             _context = context;
             _metaService = metaService;
             _groqBroker = groqBroker;
             _configuration = configuration;
             _logger = logger;
+            _leadExtractionService = leadExtractionService;
+            _apiExecutionService = apiExecutionService;
         }
 
         // GET /api/whatsapp/webhook (Verify Webhook)
@@ -248,7 +254,7 @@ namespace HattieAI.API.Controllers
                         // Find or create ChatSession for this WhatsApp contact
                         var session = await _context.ChatSessions
                             .IgnoreQueryFilters()
-                            .FirstOrDefaultAsync(s => s.TenantId == config.TenantId && s.Channel == "WhatsApp" && s.UserId == senderPhone);
+                            .FirstOrDefaultAsync(s => s.TenantId == config.TenantId && s.Channel == "WhatsApp" && s.UserId == senderPhone && !s.IsClosed);
 
                         if (session == null)
                         {
@@ -278,6 +284,13 @@ namespace HattieAI.API.Controllers
                         };
                         _context.ChatMessages.Add(userMessage);
                         await _context.SaveChangesAsync();
+
+                        // If AI is paused for this session due to agent takeover, skip rules and AI response
+                        if (session.IsAiPaused)
+                        {
+                            _logger.LogInformation("AI response generation is paused for session {SessionId} due to active manual override.", session.Id);
+                            continue;
+                        }
 
                         // For media messages without captions, do not run auto-replies or AI
                         if (isMedia && string.IsNullOrWhiteSpace(matchText))
@@ -431,7 +444,40 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                                     continue;
                                 }
 
-                                var aiResponse = await _groqBroker.GenerateResponseAsync(systemInstruction, knowledgeBase, historyBuilder.ToString(), matchText);
+                                // Evaluate API Integrations before generating AI response
+                                var apiContext = "";
+                                try
+                                {
+                                    var activeIntegrations = await _context.ApiIntegrations
+                                        .IgnoreQueryFilters()
+                                        .Where(a => a.TenantId == config.TenantId && a.IsActive)
+                                        .ToListAsync();
+
+                                    if (activeIntegrations.Any())
+                                    {
+                                        var apiResult = await _apiExecutionService.EvaluateAndExecuteAsync(
+                                            matchText, historyBuilder.ToString(), activeIntegrations, encryptionKey, config.TenantId);
+
+                                        if (apiResult != null)
+                                        {
+                                            if (apiResult.IsSuccess)
+                                            {
+                                                apiContext = $"\n\n[LIVE API DATA from \"{apiResult.IntegrationName}\"]: {apiResult.ResponseBody}";
+                                            }
+                                            else if (!string.IsNullOrEmpty(apiResult.FriendlyError))
+                                            {
+                                                apiContext = $"\n\n[API NOTE]: The system tried to call \"{apiResult.IntegrationName}\" but it is temporarily unavailable. Inform the user politely: \"{apiResult.FriendlyError}\"";
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (Exception apiEx)
+                                {
+                                    _logger.LogWarning(apiEx, "API Execution error (non-fatal) for WhatsApp");
+                                }
+
+                                var enrichedKnowledgeBase = knowledgeBase + apiContext;
+                                var aiResponse = await _groqBroker.GenerateResponseAsync(systemInstruction, enrichedKnowledgeBase, historyBuilder.ToString(), matchText);
                                 _logger.LogInformation("AI generated response: {Response}", aiResponse);
 
                                 TokenUsageGuard.AddUsage(tenant, anticipatedInputTokens + TokenUsageGuard.EstimateTokens(aiResponse));
@@ -451,6 +497,23 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                                 };
                                 _context.ChatMessages.Add(aiMsg);
                                 await _context.SaveChangesAsync();
+
+                                if (tenant.IsLeadCollectionEnabled)
+                                {
+                                    var sessId = session.Id;
+                                    var tId = config.TenantId;
+                                    _ = Task.Run(async () =>
+                                    {
+                                        try
+                                        {
+                                            await _leadExtractionService.ExtractAndSaveLeadAsync(sessId, tId);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            _logger.LogError(ex, "Lead extraction failed for WhatsApp session {SessionId}", sessId);
+                                        }
+                                    });
+                                }
                             }
                         }
                     }

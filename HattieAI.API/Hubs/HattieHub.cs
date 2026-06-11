@@ -3,7 +3,9 @@ using HattieAI.Infrastructure.AI;
 using HattieAI.Infrastructure.Persistence;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,11 +16,17 @@ namespace HattieAI.API.Hubs
     {
         private readonly GroqBroker _groqBroker;
         private readonly HattieDbContext _dbContext;
+        private readonly LeadExtractionService _leadExtractionService;
+        private readonly ApiExecutionService _apiExecutionService;
+        private readonly IConfiguration _configuration;
 
-        public HattieHub(GroqBroker groqBroker, HattieDbContext dbContext)
+        public HattieHub(GroqBroker groqBroker, HattieDbContext dbContext, LeadExtractionService leadExtractionService, ApiExecutionService apiExecutionService, IConfiguration configuration)
         {
             _groqBroker = groqBroker;
             _dbContext = dbContext;
+            _leadExtractionService = leadExtractionService;
+            _apiExecutionService = apiExecutionService;
+            _configuration = configuration;
         }
 
         public async Task SendMessage(string userMessage, Guid? chatSessionId)
@@ -216,11 +224,45 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                     return;
                 }
 
-                // 6. Call Groq with Strict Persona
+                // 6. Evaluate API Integrations
+                var apiContext = "";
+                try
+                {
+                    var activeIntegrations = await _dbContext.ApiIntegrations
+                        .IgnoreQueryFilters()
+                        .Where(a => a.TenantId == tenantIdString && a.IsActive)
+                        .ToListAsync();
+
+                    if (activeIntegrations.Any())
+                    {
+                        var encryptionKey = _configuration["ENCRYPTION_KEY"] ?? Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? "";
+                        var apiResult = await _apiExecutionService.EvaluateAndExecuteAsync(
+                            userMessage, history, activeIntegrations, encryptionKey, tenantIdString);
+
+                        if (apiResult != null)
+                        {
+                            if (apiResult.IsSuccess)
+                            {
+                                apiContext = $"\n\n[LIVE API DATA from \"{apiResult.IntegrationName}\"]: {apiResult.ResponseBody}";
+                            }
+                            else if (!string.IsNullOrEmpty(apiResult.FriendlyError))
+                            {
+                                apiContext = $"\n\n[API NOTE]: The system tried to call \"{apiResult.IntegrationName}\" but it is temporarily unavailable. Inform the user politely: \"{apiResult.FriendlyError}\"";
+                            }
+                        }
+                    }
+                }
+                catch (Exception apiEx)
+                {
+                    Console.WriteLine($"[HattieHub] API Execution error (non-fatal): {apiEx.Message}");
+                }
+
+                // 7. Call Groq with Strict Persona
+                var enrichedKnowledgeBase = knowledgeBase + apiContext;
                 await Clients.Caller.SendAsync("ReceiveMessageStart");
             
                 var fullResponse = "";
-                var responseStream = _groqBroker.GenerateResponseStreamAsync(systemInstruction, knowledgeBase, history, userMessage);
+                var responseStream = _groqBroker.GenerateResponseStreamAsync(systemInstruction, enrichedKnowledgeBase, history, userMessage);
 
                 await foreach (var chunk in responseStream)
                 {
@@ -244,6 +286,23 @@ Provide helpful, natural assistance while strictly adhering to the provided Cont
                 };
                 _dbContext.ChatMessages.Add(aiChatMsg);
                 await _dbContext.SaveChangesAsync();
+
+                if (tenant.IsLeadCollectionEnabled)
+                {
+                    var sessId = session.Id;
+                    var tId = tenantIdString;
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _leadExtractionService.ExtractAndSaveLeadAsync(sessId, tId);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[HattieHub] Lead Extraction failed: {ex.Message}");
+                        }
+                    });
+                }
             }
             catch (Exception ex)
             {

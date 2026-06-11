@@ -51,6 +51,17 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
     const messagesEndRef = useRef(null);
     const signalRRef = useRef(null);
     const currentAiMessageRef = useRef("");
+    const inactivityTimeoutRef = useRef(null);
+    const resetInactivityTimer = () => {
+        if (inactivityTimeoutRef.current) {
+            clearTimeout(inactivityTimeoutRef.current);
+        }
+        inactivityTimeoutRef.current = setTimeout(() => {
+            console.log("Session cleared due to 10 minutes of inactivity.");
+            setSessionId(null);
+            setMessages([]);
+        }, 10 * 60 * 1000);
+    };
     let apiUrl = window.HattieAI?.apiUrl || import.meta.env.VITE_API_URL;
     // Safety check: If in production mode but URL is localhost, force production URL
     if (import.meta.env.PROD && apiUrl?.includes('localhost') && window.location.hostname !== 'localhost') {
@@ -58,6 +69,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
     }
     const logoUrl = import.meta.env.DEV ? '/hattie.png' : `${apiUrl}/hattie.png`;
     useEffect(() => {
+        resetInactivityTimer();
         fetch(`${apiUrl}/api/tenants/${chatbotId}`)
             .then(res => res.json())
             .then(data => {
@@ -87,6 +99,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
                     }]);
             },
             onMessageChunk: (chunk) => {
+                resetInactivityTimer();
                 currentAiMessageRef.current += chunk;
                 // Check for specific backend error message that might be streamed as content
                 if (currentAiMessageRef.current.includes("Error calling Gemini API") ||
@@ -117,6 +130,9 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
         });
         service.start();
         return () => {
+            if (inactivityTimeoutRef.current) {
+                clearTimeout(inactivityTimeoutRef.current);
+            }
             if (service && typeof service.stop === 'function') {
                 service.stop();
             }
@@ -143,6 +159,7 @@ export default function ChatInterface({ chatbotId, language = 'en' }) {
         setMessages((prev) => [...prev, userMsg]);
         // Send via SignalR
         if (signalRRef.current) {
+            resetInactivityTimer();
             await signalRRef.current.sendMessage(userMessage, sessionId);
         }
     }

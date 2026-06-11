@@ -68,6 +68,13 @@
             }
             <button type="button" @onclick='() => ScrollToSection("languages")'>Languages</button>
             <button type="button" @onclick='() => ScrollToSection("knowledge")'>Knowledge Base</button>
+            <button type="button" @onclick='() => ScrollToSection("crm-docs")'>CRM & Lead Collection</button>
+            <button type="button" @onclick='() => ScrollToSection("api-docs")'>API Integrations</button>
+            <button type="button" @onclick='() => ScrollToSection("session-docs")'>Session Management</button>
+            @if (isAdmin)
+            {
+                <button type="button" @onclick='() => ScrollToSection("developer-docs")'>Developer & Debugging</button>
+            }
             <button type="button" @onclick='() => ScrollToSection("troubleshooting")'>Troubleshooting</button>
         </aside>
 
@@ -272,6 +279,105 @@
                 </div>
             </section>
 
+            <section id="crm-docs" class="doc-section">
+                <div class="doc-section-header">
+                    <span class="doc-kicker">Leads</span>
+                    <h2>CRM & Lead Collection</h2>
+                    <p>Hattie AI collects customer details natively during website and WhatsApp chats, organizing them into a Kanban board.</p>
+                </div>
+                <div class="rule-list">
+                    <div>
+                        <strong>How Lead Collection Works</strong>
+                        <span>When a customer interacts with the bot, the AI extracts details like name, email, phone, company, and interest notes as the conversation progresses, and automatically creates a lead in the CRM.</span>
+                    </div>
+                    <div>
+                        <strong>Configure Lead Instructions</strong>
+                        <span>Under the <strong>Configuration</strong> page, you can enable/disable lead collection and specify instructions for the AI (e.g., <em>"Ask the user for their email and phone number before discussing booking options"</em>).</span>
+                    </div>
+                    <div>
+                        <strong>Managing the Kanban Board</strong>
+                        <span>The CRM page features a Kanban board with stages: <em>New, Contacted, Qualified, Proposal, Won, and Lost</em>. You can move cards using the left/right arrows, view the original conversation history, edit lead details, or manually add offline leads.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="api-docs" class="doc-section">
+                <div class="doc-section-header">
+                    <span class="doc-kicker">Integrations</span>
+                    <h2>API Integrations</h2>
+                    <p>Connect third-party APIs to allow the AI to push or pull data during conversations dynamically.</p>
+                </div>
+                <div class="rule-list">
+                    <div>
+                        <strong>Overview</strong>
+                        <span>API integrations let the AI run live actions—such as checking order status, booking appointments, or submitting leads to an external database—in real time.</span>
+                    </div>
+                    <div>
+                        <strong>Push vs Pull</strong>
+                        <span><strong>Push</strong> integrations send data to external systems. <strong>Pull</strong> integrations fetch data to answer customer questions dynamically (e.g., stock levels, prices).</span>
+                    </div>
+                    <div>
+                        <strong>Integration Setup</strong>
+                        <span>Specify the HTTP Method, Endpoint URL, extra Headers, and Authentication details (ApiKey, Bearer Token, or Basic). Custom templates let you map AI-extracted parameters using the <code>@("{{")</code>parameter_name<code>@("}}")</code> syntax in the request body.</span>
+                    </div>
+                    <div>
+                        <strong>Testing API Connection</strong>
+                        <span>Use the <strong>Test</strong> (play) button on any API card to run a manual check with mock parameters. This shows response status and payloads for easy validation.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="session-docs" class="doc-section">
+                <div class="doc-section-header">
+                    <span class="doc-kicker">Sessions</span>
+                    <h2>Session Management & Timeout</h2>
+                    <p>Understand how chat session lifetimes are managed for privacy and stability.</p>
+                </div>
+                <div class="rule-list">
+                    <div>
+                        <strong>Website Chat Widget</strong>
+                        <span>A website visitor's chat session automatically expires and clears after 10 minutes of inactivity, or when they refresh the browser page. This ensures customer privacy on public devices.</span>
+                    </div>
+                    <div>
+                        <strong>WhatsApp Automation</strong>
+                        <span>A WhatsApp contact's active session closes automatically after 10 minutes of inactivity. When timed out, the system sends an automatic thank you message. A new session starts on their next message.</span>
+                    </div>
+                </div>
+            </section>
+
+            @if (isAdmin)
+            {
+                <section id="developer-docs" class="doc-section">
+                    <div class="doc-section-header">
+                        <span class="doc-kicker">Developer Specs</span>
+                        <h2>Developer & Debugging Guide</h2>
+                        <p>Internal documentation for platform administrators and system developers.</p>
+                    </div>
+                    <div class="rule-list">
+                        <div>
+                            <strong>Core API Routing & LLM Evaluation</strong>
+                            <span>The <code>ApiExecutionService</code> evaluates current active integrations by passing schemas to the LLM (Groq/Gemini). It extracts parameters in JSON format and calls endpoints. All exceptions are handled gracefully; the user never sees raw backend failures.</span>
+                        </div>
+                        <div>
+                            <strong>Credential Encryption (AES-256)</strong>
+                            <span>Tokens and secrets are encrypted at rest using AES-256. Ensure a secure <code>ENCRYPTION_KEY</code> environment variable is set. If the key is missing or modified, decryption of saved credentials will fail.</span>
+                        </div>
+                        <div>
+                            <strong>WhatsApp Background Timeout Service</strong>
+                            <span>WhatsApp session timeouts are checked by a background worker (<code>WhatsAppSessionTimeoutService</code>) inheriting from <code>BackgroundService</code>. It runs every minute, scanning for sessions with no activity for 10 minutes, triggers a thank-you message via Meta API, and marks them closed.</span>
+                        </div>
+                        <div>
+                            <strong>Database Schema & Seed Files</strong>
+                            <span>Database models are located in <code>HattieAI.Domain/Entities</code>. Any schema change requires creating EF Migrations targeted to the PostgreSQL database. The startup projects execute migrations automatically.</span>
+                        </div>
+                        <div>
+                            <strong>Debugging Integrations & Logs</strong>
+                            <span>Check console/syslog outputs for <code>[ApiExecutionService]</code> prefix. Test payloads, endpoint connection errors, rate limit indicators, and JSON parsing failures are logged there.</span>
+                        </div>
+                    </div>
+                </section>
+            }
+
             <section id="troubleshooting" class="doc-section">
                 <div class="doc-section-header">
                     <span class="doc-kicker">Support</span>
@@ -436,44 +542,6 @@
         padding: 0.55rem 0.75rem;
         font-weight: 800;
     }
-
-    .code-block {
-        margin: 0;
-        background: #0f172a;
-        color: #e2e8f0;
-        border-radius: 8px;
-        padding: 1rem;
-        overflow: auto;
-        font-family: 'JetBrains Mono', Consolas, monospace;
-        font-size: 0.84rem;
-        line-height: 1.6;
-        white-space: pre-wrap;
-    }
-
-    .doc-note {
-        display: grid;
-        grid-template-columns: 22px 1fr;
-        gap: 0.6rem;
-        align-items: start;
-        margin-top: 0.85rem;
-        border: 1px solid #bfdbfe;
-        background: #eff6ff;
-        color: #1e3a8a;
-        border-radius: 8px;
-        padding: 0.85rem;
-    }
-
-    .rule-list {
-        display: grid;
-        gap: 0.65rem;
-    }
-
-    @@media (max-width: 980px) {
-        .docs-layout {
-            grid-template-columns: 1fr;
-        }
-
-        .docs-toc {
 
     .code-block {
         margin: 0;

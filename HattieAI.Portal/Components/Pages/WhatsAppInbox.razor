@@ -1,5 +1,5 @@
 @page "/whatsapp-inbox"
-@page "/crm-leads"
+@page "/chats"
 @using HattieAI.Domain.Entities
 @using HattieAI.Infrastructure.Persistence
 @using HattieAI.Infrastructure.Security
@@ -15,13 +15,13 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>CRM Leads | Hattie AI</PageTitle>
+<PageTitle>Chats | Hattie AI</PageTitle>
 
 <div class="portal-page inbox-page-layout">
     <div class="inbox-sidebar">
         <div class="inbox-header">
-            <h3><i class="bi bi-person-lines-fill text-primary me-2"></i> CRM Leads</h3>
-            <span class="badge bg-primary-subtle text-primary">@sessions.Count leads</span>
+            <h3><i class="bi bi-chat-left-text-fill text-primary me-2"></i> Chats</h3>
+            <span class="badge bg-primary-subtle text-primary">@sessions.Count conversations</span>
         </div>
 
         @if (isAdmin && tenants.Count > 1)
@@ -87,9 +87,9 @@
         @if (activeSession == null)
         {
             <div class="state-panel embedded">
-                <i class="bi bi-person-lines-fill text-primary fs-1 mb-2"></i>
-                <strong>Select a lead</strong>
-                <span>Choose a lead from the CRM list to view the chat history.</span>
+                <i class="bi bi-chat-left-text-fill text-primary fs-1 mb-2"></i>
+                <strong>Select a conversation</strong>
+                <span>Choose a chat from the sidebar to view the conversation history.</span>
             </div>
         }
         else
@@ -108,7 +108,33 @@
                         </div>
                     </div>
                 </div>
-                <div>
+                <div class="d-flex align-items-center gap-2">
+                    @if (IsWhatsAppChannel(activeSession))
+                    {
+                        @if (activeSession.IsAiPaused)
+                        {
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle py-1.5 px-2.5 rounded d-inline-flex align-items-center gap-1.5 small">
+                                <span class="spinner-grow spinner-grow-sm text-warning" style="width: 8px; height: 8px;" role="status"></span>
+                                AI Bot Paused
+                            </span>
+                            <button class="btn btn-sm btn-success" @onclick="ToggleAiPause" disabled="@isSending">
+                                <i class="bi bi-play-fill"></i> Resume AI
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle py-1.5 px-2.5 rounded d-inline-flex align-items-center gap-1.5 small">
+                                <span class="position-relative d-inline-flex align-items-center" style="width: 8px; height: 8px;">
+                                    <span class="position-absolute inline-flex h-100 w-100 rounded-full bg-success opacity-75 animate-ping"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                                </span>
+                                AI Bot Active
+                            </span>
+                            <button class="btn btn-sm btn-outline-warning" @onclick="ToggleAiPause" disabled="@isSending">
+                                <i class="bi bi-pause-fill"></i> Pause AI
+                            </button>
+                        }
+                    }
                     <button class="btn btn-outline-secondary btn-sm" @onclick="RefreshActiveMessages">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
@@ -128,7 +154,7 @@
                 }
                 @if (!activeMessages.Any())
                 {
-                    <div class="text-center py-5 text-muted">No messages found for this lead.</div>
+                    <div class="text-center py-5 text-muted">No messages found.</div>
                 }
             </div>
 
@@ -162,8 +188,8 @@
                     <div class="crm-readonly-note">
                         <i class="bi bi-info-circle text-primary"></i>
                         <div>
-                            <strong>Website chatbot lead</strong>
-                            <span>This lead came from the website chatbot. The CRM keeps the customer history for follow-up.</span>
+                            <strong>Website chatbot</strong>
+                            <span>This conversation came from the website chatbot. Manual replies are available for WhatsApp only.</span>
                         </div>
                     </div>
                 }
@@ -590,6 +616,21 @@
 
         await LoadTenantSessions();
 
+        // Parse query parameter to preselect active session
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("sessionId", out var sessIdVal))
+        {
+            if (Guid.TryParse(sessIdVal, out var parsedSessId))
+            {
+                var targetSession = sessions.FirstOrDefault(s => s.Id == parsedSessId);
+                if (targetSession != null)
+                {
+                    activeSession = targetSession;
+                    await RefreshActiveMessages();
+                }
+            }
+        }
+
         // Start background polling every 5 seconds to load new messages automatically
         pollTimer = new System.Threading.Timer(async _ => 
         {
@@ -786,6 +827,17 @@
                 CreatedAt = DateTime.UtcNow
             };
             context.ChatMessages.Add(chatMsg);
+
+            // Auto-pause AI since agent is replying manually
+            var dbSession = await context.ChatSessions
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.Id == activeSession.Id);
+            if (dbSession != null)
+            {
+                dbSession.IsAiPaused = true;
+                activeSession.IsAiPaused = true; // Sync state
+            }
+
             await context.SaveChangesAsync();
 
             replyText = "";
@@ -809,6 +861,28 @@
         if (CanReplyToActiveSession && e.Key == "Enter" && !e.ShiftKey)
         {
             await SendMessage();
+        }
+    }
+
+    private async Task ToggleAiPause()
+    {
+        if (activeSession == null) return;
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var dbSession = await context.ChatSessions
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.Id == activeSession.Id);
+            if (dbSession != null)
+            {
+                dbSession.IsAiPaused = !dbSession.IsAiPaused;
+                await context.SaveChangesAsync();
+                activeSession.IsAiPaused = dbSession.IsAiPaused;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update AI status: {ex.Message}";
         }
     }
 
@@ -888,12 +962,12 @@
     {
         if (selectedTenant == null || !availableChannels.Any())
         {
-            return "CRM is not enabled for this account.";
+            return "Chat functions are not enabled for this account.";
         }
 
         return channelFilter == "All"
-            ? "No leads found yet."
-            : $"No {GetFilterLabel(channelFilter)} leads found yet.";
+            ? "No chats found yet."
+            : $"No {GetFilterLabel(channelFilter)} chats found yet.";
     }
 
     private static string GetAvatarText(string value)

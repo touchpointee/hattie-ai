@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using HattieAI.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HattieAI.Infrastructure.Migrations
 {
     [DbContext(typeof(HattieDbContext))]
-    partial class HattieDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260611175903_AddIsClosedToChatSession")]
+    partial class AddIsClosedToChatSession
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,80 +25,6 @@ namespace HattieAI.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("HattieAI.Domain.Entities.ApiIntegration", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AuthHeaderName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("AuthType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("AuthValue")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CallCountResetDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DailyCallCount")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DailyCallLimit")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Direction")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Headers")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("HttpMethod")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ParameterSchema")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RequestBodyTemplate")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ApiIntegrations");
-                });
 
             modelBuilder.Entity("HattieAI.Domain.Entities.AppUser", b =>
                 {
@@ -189,9 +118,6 @@ namespace HattieAI.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsAiPaused")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsClosed")
                         .HasColumnType("boolean");

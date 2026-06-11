@@ -247,7 +247,7 @@
             <div class="card table-card">
                 <div class="card-header">
                     <h3>Recent Conversations</h3>
-                    <a href="crm-leads" class="link-sm">View Inbox</a>
+                    <a href="chats" class="link-sm">View Inbox</a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -290,7 +290,7 @@
                                         <td class="text-muted small">@session.CreatedAt.ToLocalTime().ToString("MMM dd, HH:mm")</td>
                                         <td><span class="badge bg-info-subtle text-info">Connected</span></td>
                                         <td>
-                                            <a href="crm-leads" class="btn btn-icon btn-sm" title="View Chat">
+                                            <a href="chats" class="btn btn-icon btn-sm" title="View Chat">
                                                 <i class="bi bi-chevron-right"></i>
                                             </a>
                                         </td>
@@ -439,9 +439,7 @@
     }
 
     .kpi-card {
-        background: rgba(17, 24, 39, 0.55);
-        backdrop-filter: var(--backdrop-blur);
-        -webkit-backdrop-filter: var(--backdrop-blur);
+        background: var(--surface-color);
         border: 1px solid var(--border-color);
         border-radius: var(--border-radius);
         padding: 1.5rem;
@@ -453,8 +451,8 @@
 
     .kpi-card:hover {
         transform: translateY(-2px);
-        box-shadow: var(--shadow-md), 0 0 15px rgba(99, 102, 241, 0.08);
-        border-color: rgba(99, 102, 241, 0.25);
+        box-shadow: var(--shadow-md), 0 10px 20px rgba(37, 99, 235, 0.05);
+        border-color: rgba(37, 99, 235, 0.25);
     }
 
     .kpi-content {
@@ -481,7 +479,7 @@
     .kpi-value {
         font-size: 1.8rem;
         font-weight: 800;
-        color: #ffffff;
+        color: var(--text-color);
         line-height: 1;
         letter-spacing: -0.02em;
     }
@@ -497,13 +495,13 @@
     }
 
     .kpi-trend.positive { 
-        background: rgba(16, 185, 129, 0.12);
-        color: #34d399; 
+        background: rgba(16, 185, 129, 0.08);
+        color: var(--success-color); 
     }
 
     .kpi-trend.neutral {
-        background: rgba(6, 182, 212, 0.12);
-        color: #67e8f9;
+        background: rgba(37, 99, 235, 0.08);
+        color: var(--primary-color);
     }
 
     .kpi-chart {
@@ -539,6 +537,14 @@
         pointer-events: none;
     }
 
+    .chart-center-text span {
+        color: var(--text-color) !important;
+    }
+
+    .chart-center-text small {
+        color: var(--text-muted) !important;
+    }
+
     /* Details Grid */
     .details-grid {
         display: grid;
@@ -568,19 +574,19 @@
     }
 
     .btn-icon:hover {
-        color: white;
+        color: var(--primary-color);
     }
 
     .link-sm {
         font-size: 0.85rem;
         text-decoration: none;
-        color: var(--primary-light);
+        color: var(--primary-color);
         font-weight: 600;
         transition: color 0.2s;
     }
 
     .link-sm:hover {
-        color: white;
+        color: var(--primary-dark);
         text-decoration: underline;
     }
 
@@ -593,6 +599,15 @@
         align-items: center;
     }
 
+    .health-alert span {
+        color: #065f46 !important;
+        font-weight: 600;
+    }
+
+    .health-alert i {
+        color: var(--success-color) !important;
+    }
+
     .health-item {
         background: rgba(255, 255, 255, 0.01);
         border: 1px solid var(--border-color);
@@ -601,7 +616,7 @@
     }
 
     .health-card .progress {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: rgba(0, 0, 0, 0.05);
     }
 
     .usage-mini {
@@ -621,6 +636,17 @@
     
     @@media (max-width: 768px) {
         .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    @@media (max-width: 576px) {
+        .dashboard-controls {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.75rem;
+        }
+        .control-actions {
+            justify-content: flex-end;
+        }
     }
 </style>
 

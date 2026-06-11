@@ -195,6 +195,33 @@
                             </div>
                         }
                     </div>
+
+                    <div class="config-section">
+                        <div class="section-header">
+                            <div>
+                                <h3>AI Lead Collection</h3>
+                                <p>Enable automatic lead extraction by Hattie AI from chat conversations.</p>
+                            </div>
+                        </div>
+
+                        <div class="lead-config-card p-3 border rounded bg-light mt-3">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="enableLeadCollection" @bind="isLeadCollectionEnabled" />
+                                <label class="form-check-label fw-bold text-dark mb-0" for="enableLeadCollection" style="cursor: pointer;">Enable Lead Collection</label>
+                            </div>
+                            
+                            @if (isLeadCollectionEnabled)
+                            {
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold text-muted" for="leadInstructions">Lead Collection Instructions</label>
+                                    <textarea class="form-control" id="leadInstructions" rows="3" 
+                                              placeholder="Specify what details to collect and when... E.g. Ask for name, email, and phone when they ask for custom pricing." 
+                                              @bind="leadCollectionInstruction"></textarea>
+                                    <div class="form-text text-muted" style="font-size: 0.72rem;">These instructions direct the AI on what fields (like name, email, phone) to extract from conversations to register in the CRM.</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
                 }
             </section>
         </div>
@@ -546,6 +573,8 @@
     private string currentTenantId = string.Empty;
     private string successMessage = "";
     private string errorMessage = "";
+    private bool isLeadCollectionEnabled;
+    private string leadCollectionInstruction = "";
 
     private IEnumerable<Tenant> FilteredTenants =>
         string.IsNullOrWhiteSpace(clientSearch)
@@ -595,6 +624,8 @@
         allowedOrigins = selectedTenant?.AllowedOrigins?.ToList() ?? new();
         languageSearch = "";
         newOriginUrl = "";
+        isLeadCollectionEnabled = selectedTenant?.IsLeadCollectionEnabled ?? false;
+        leadCollectionInstruction = selectedTenant?.LeadCollectionInstruction ?? string.Empty;
     }
 
     private bool IsLanguageSelected(string code) => selectedLanguageCodes.Contains(code);
@@ -698,6 +729,8 @@
                 tenantToUpdate.SupportedLanguages.Add(language);
 
             tenantToUpdate.AllowedOrigins = allowedOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            tenantToUpdate.IsLeadCollectionEnabled = isLeadCollectionEnabled;
+            tenantToUpdate.LeadCollectionInstruction = leadCollectionInstruction;
             await context.SaveChangesAsync();
 
             selectedTenant = tenantToUpdate;
@@ -707,6 +740,8 @@
                 cached.AllowedOrigins = tenantToUpdate.AllowedOrigins;
                 cached.KnowledgeBaseText = tenantToUpdate.KnowledgeBaseText;
                 cached.SupportedLanguages = tenantToUpdate.SupportedLanguages;
+                cached.IsLeadCollectionEnabled = tenantToUpdate.IsLeadCollectionEnabled;
+                cached.LeadCollectionInstruction = tenantToUpdate.LeadCollectionInstruction;
             }
 
             successMessage = "Configuration saved.";

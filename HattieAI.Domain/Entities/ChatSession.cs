@@ -9,6 +9,8 @@ namespace HattieAI.Domain.Entities
         public string Title { get; set; } = "New Chat";
         public string Channel { get; set; } = "Website";
         public string? ContactName { get; set; }
+        public bool IsClosed { get; set; } = false;
+        public bool IsAiPaused { get; set; } = false;
         public ICollection<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
     }
 }

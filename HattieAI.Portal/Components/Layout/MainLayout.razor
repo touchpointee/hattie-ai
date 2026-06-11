@@ -62,19 +62,19 @@
                 </button>
                 <div>
                     <h2 class="page-title">@CurrentPageTitle</h2>
-                    <div class="page-subtitle">@CurrentPageSubtitle</div>
+                    <div class="page-subtitle d-none d-md-block">@CurrentPageSubtitle</div>
                 </div>
             </div>
             <div class="top-bar-right">
-                <a href="documentation" class="help-link">
+                <a href="documentation" class="help-link" title="Documentation">
                     <i class="bi bi-question-circle"></i>
-                    Docs
+                    <span class="d-none d-sm-inline">Docs</span>
                 </a>
                 <AuthorizeView Roles="Admin">
                     <Authorized>
-                        <a href="clients" class="btn btn-sm btn-primary">
-                            <i class="bi bi-plus-lg me-1"></i>
-                            Client
+                        <a href="clients" class="btn btn-sm btn-primary" title="Add Client">
+                            <i class="bi bi-plus-lg"></i>
+                            <span class="d-none d-sm-inline ms-1">Client</span>
                         </a>
                     </Authorized>
                 </AuthorizeView>
@@ -334,7 +334,7 @@
 
     .content-wrapper {
         flex: 1;
-        overflow-y: auto;
+        overflow: auto;
         padding: 1.35rem;
     }
 
@@ -424,8 +424,9 @@
         "knowledge-base" => "Knowledge Base",
         "client-configuration" => "Configuration",
         "documentation" => "Documentation",
-        "crm-leads" => "CRM Leads",
-        "whatsapp-inbox" => "CRM Leads",
+        "chats" => "Chats",
+        "crm" => "CRM Kanban",
+        "api-integrations" => "API Integrations",
         "whatsapp-setup" => "WhatsApp Setup",
         _ => "Hattie AI"
     };
@@ -436,8 +437,9 @@
         "knowledge-base" => "Upload, edit, and rebuild client knowledge",
         "client-configuration" => "Languages and website allowlists",
         "documentation" => "Install guides and operating procedures",
-        "crm-leads" => "Website chatbot and WhatsApp leads",
-        "whatsapp-inbox" => "Website chatbot and WhatsApp leads",
+        "chats" => "Website chatbot and WhatsApp chats",
+        "crm" => "Manage collected customer leads in Kanban stages",
+        "api-integrations" => "Connect external APIs for dynamic AI responses",
         "whatsapp-setup" => "Connect Meta WhatsApp credentials",
         _ => "Admin portal"
     };
