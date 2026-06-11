@@ -112,7 +112,20 @@ namespace HattieAI.API.Hubs
                 var directContact = string.IsNullOrWhiteSpace(tenant.ContactPhone)
                     ? "the business phone number"
                     : tenant.ContactPhone;
-                var systemInstruction = $@"You are a friendly, intelligent, and professional AI assistant for {tenantName}.
+
+                var leadInstructionSection = "";
+                if (tenant.IsLeadCollectionEnabled && !string.IsNullOrWhiteSpace(tenant.LeadCollectionInstruction))
+                {
+                    leadInstructionSection = $"\n\n**LEAD COLLECTION MISSION:**\n{tenant.LeadCollectionInstruction}";
+                }
+
+                var customPersonaSection = "";
+                if (!string.IsNullOrWhiteSpace(tenant.SystemInstruction))
+                {
+                    customPersonaSection = $"\n\n**YOUR PERSONA & BEHAVIOR:**\n{tenant.SystemInstruction}";
+                }
+
+                var systemInstruction = $@"You are a friendly, intelligent, and professional AI assistant for {tenantName}.{customPersonaSection}{leadInstructionSection}
 
 **Your Mission:**
 Provide helpful, natural assistance while strictly adhering to the provided Context for all business information.

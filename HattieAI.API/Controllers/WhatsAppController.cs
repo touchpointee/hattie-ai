@@ -382,15 +382,27 @@ namespace HattieAI.API.Controllers
                                     knowledgeBase = tenant.KnowledgeBaseText ?? "";
                                 }
 
-                                var tenantName = tenant.Name ?? "the system";
-                                var directContact = string.IsNullOrWhiteSpace(tenant.ContactPhone)
-                                    ? "the business phone number"
-                                    : tenant.ContactPhone;
-                                var supportedLanguagesList = tenant.SupportedLanguages != null && tenant.SupportedLanguages.Any()
-                                    ? string.Join(", ", tenant.SupportedLanguages.Select(l => l.Name))
-                                    : "English";
+                                 var tenantName = tenant.Name ?? "the system";
+                                 var directContact = string.IsNullOrWhiteSpace(tenant.ContactPhone)
+                                     ? "the business phone number"
+                                     : tenant.ContactPhone;
+                                 var supportedLanguagesList = tenant.SupportedLanguages != null && tenant.SupportedLanguages.Any()
+                                     ? string.Join(", ", tenant.SupportedLanguages.Select(l => l.Name))
+                                     : "English";
 
-                                var systemInstruction = $@"You are a friendly, intelligent, and professional AI assistant for {tenantName} on WhatsApp.
+                                 var leadInstructionSection = "";
+                                 if (tenant.IsLeadCollectionEnabled && !string.IsNullOrWhiteSpace(tenant.LeadCollectionInstruction))
+                                 {
+                                     leadInstructionSection = $"\n\n**LEAD COLLECTION MISSION:**\n{tenant.LeadCollectionInstruction}";
+                                 }
+
+                                 var customPersonaSection = "";
+                                 if (!string.IsNullOrWhiteSpace(tenant.SystemInstruction))
+                                 {
+                                     customPersonaSection = $"\n\n**YOUR PERSONA & BEHAVIOR:**\n{tenant.SystemInstruction}";
+                                 }
+
+                                 var systemInstruction = $@"You are a friendly, intelligent, and professional AI assistant for {tenantName} on WhatsApp.{customPersonaSection}{leadInstructionSection}
 
 **Your Mission:**
 Provide helpful, natural assistance while strictly adhering to the provided Context for all business information.
