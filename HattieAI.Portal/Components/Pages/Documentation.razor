@@ -71,6 +71,7 @@
             <button type="button" @onclick='() => ScrollToSection("crm-docs")'>CRM & Lead Collection</button>
             <button type="button" @onclick='() => ScrollToSection("api-docs")'>API Integrations</button>
             <button type="button" @onclick='() => ScrollToSection("session-docs")'>Session Management</button>
+            <button type="button" @onclick='() => ScrollToSection("scenarios")'>Deployment Scenarios</button>
             @if (isAdmin)
             {
                 <button type="button" @onclick='() => ScrollToSection("developer-docs")'>Developer & Debugging</button>
@@ -341,6 +342,66 @@
                     <div>
                         <strong>WhatsApp Automation</strong>
                         <span>A WhatsApp contact's active session closes automatically after 10 minutes of inactivity. When timed out, the system sends an automatic thank you message. A new session starts on their next message.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="scenarios" class="doc-section">
+                <div class="doc-section-header">
+                    <span class="doc-kicker">Playbook</span>
+                    <h2>Client Deployment Scenarios</h2>
+                    <p>Step-by-step setup guides for the 5 common chatbot configurations based on client requirements.</p>
+                </div>
+                <div class="rule-list">
+                    <div class="p-3 border rounded bg-light mb-3">
+                        <h4 class="fw-bold mb-2 text-primary fs-6"><i class="bi bi-info-circle-fill me-2"></i>1. Knowledge-Sharing Chatbot Only</h4>
+                        <p class="text-sm mb-2 text-muted">For clients who only need a FAQ bot that answers questions from documents without capturing contact info.</p>
+                        <ul class="text-xs mb-0 ps-3">
+                            <li class="mb-1"><strong>Configuration:</strong> Go to <strong>Configuration</strong> page, set <strong>Lead Collection</strong> = <code>Disabled</code>.</li>
+                            <li class="mb-1"><strong>API Integrations:</strong> Leave completely empty (no active integrations).</li>
+                            <li><strong>Knowledge Base:</strong> Upload relevant PDFs or paste company details to instruct the bot.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="p-3 border rounded bg-light mb-3">
+                        <h4 class="fw-bold mb-2 text-primary fs-6"><i class="bi bi-kanban me-2"></i>2. Local Kanban Lead Collection Only</h4>
+                        <p class="text-sm mb-2 text-muted">For clients who want the AI to capture leads locally and display them on the Kanban board.</p>
+                        <ul class="text-xs mb-0 ps-3">
+                            <li class="mb-1"><strong>Configuration:</strong> Go to <strong>Configuration</strong> page, set <strong>Lead Collection</strong> = <code>Enabled</code>.</li>
+                            <li class="mb-1"><strong>AI Instructions:</strong> Provide clear guidelines (e.g. <em>"Ask for their name, email, and phone number before booking"</em>).</li>
+                            <li><strong>API Integrations:</strong> Leave completely empty.</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-3 border rounded bg-light mb-3">
+                        <h4 class="fw-bold mb-2 text-primary fs-6"><i class="bi bi-arrow-down-left-circle-fill me-2"></i>3. Live Data Retrieval (API Pull - e.g. Courier Tracking)</h4>
+                        <p class="text-sm mb-2 text-muted">For clients who want the AI to fetch status, stock, or prices from external databases dynamically.</p>
+                        <ul class="text-xs mb-0 ps-3">
+                            <li class="mb-1"><strong>API Integrations:</strong> Add a <strong>Pull</strong> integration. Set HTTP method to <code>GET</code> and configure URL.</li>
+                            <li class="mb-1"><strong>Parameters:</strong> Add a parameter representing the lookup key (e.g., <code>tracking_id</code>).</li>
+                            <li><strong>AI Description:</strong> Tell the AI when to query (e.g., <em>"Call this API when the customer asks to track their order status and has provided their tracking number"</em>).</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-3 border rounded bg-light mb-3">
+                        <h4 class="fw-bold mb-2 text-primary fs-6"><i class="bi bi-arrow-up-right-circle-fill me-2"></i>4. Dynamic Booking & Operations (API Push - e.g. Book Appointment)</h4>
+                        <p class="text-sm mb-2 text-muted">For clients who want the AI to collect details and register them directly in external booking/ordering systems.</p>
+                        <ul class="text-xs mb-0 ps-3">
+                            <li class="mb-1"><strong>API Integrations:</strong> Add a <strong>Push</strong> integration. Set method to <code>POST</code>/<code>PUT</code> and specify endpoint.</li>
+                            <li class="mb-1"><strong>Parameters:</strong> Add required fields (e.g., <code>name</code>, <code>booking_date</code>, <code>booking_time</code>).</li>
+                            <li class="mb-1"><strong>Request Body:</strong> Map placeholders in the JSON template: <code>{ "name": "{{name}}", "date": "{{booking_date}}" }</code>.</li>
+                            <li><strong>AI Description:</strong> Instruction example: <em>"Call this API when the customer confirms they want to book a reservation and has provided their details."</em></li>
+                        </ul>
+                    </div>
+
+                    <div class="p-3 border rounded bg-light mb-3">
+                        <h4 class="fw-bold mb-2 text-primary fs-6"><i class="bi bi-arrow-repeat me-2"></i>5. Dual Export (Portal Kanban + External API/CRM)</h4>
+                        <p class="text-sm mb-2 text-muted">For clients who want leads stored in the local CRM Kanban board AND exported to an external CRM (HubSpot, Salesforce, etc.).</p>
+                        <ul class="text-xs mb-0 ps-3">
+                            <li class="mb-1"><strong>Configuration:</strong> Go to <strong>Configuration</strong>, set <strong>Lead Collection</strong> = <code>Enabled</code> (logs details to CRM board).</li>
+                            <li class="mb-1"><strong>API Integrations:</strong> Add a **Push** API Integration targeting HubSpot/CRM webhook.</li>
+                            <li><strong>AI Description:</strong> Set description to trigger on success: <em>"Call this API to register the lead when the customer has finished sharing their name, email, and phone number."</em></li>
+                        </ul>
                     </div>
                 </div>
             </section>
