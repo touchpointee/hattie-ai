@@ -28,6 +28,21 @@
         </div>
     </div>
 
+    @if (isAdmin && tenants.Count > 1)
+    {
+        <div class="filters-row mb-4 p-3 border rounded bg-white shadow-sm d-flex align-items-center gap-3 flex-wrap">
+            <div class="filter-item">
+                <label class="form-label small fw-bold text-muted mb-1 d-block">Client Tenant</label>
+                <select class="form-select form-select-sm" @onchange="OnTenantChanged" style="min-width: 180px; padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); outline: none;">
+                    @foreach (var t in tenants)
+                    {
+                        <option value="@t.Id" selected="@(selectedTenantId == t.Id)">@t.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+    }
+
     @if (isLoading)
     {
         <div class="state-panel">
@@ -401,12 +416,29 @@
     private bool showDeleteConfirm = false;
     private ApiIntegration? deleteTarget;
 
+    private List<Tenant> tenants = new();
+    private Guid selectedTenantId;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         isAdmin = user.IsInRole("Admin");
         tenantId = user.FindFirst("TenantId")?.Value ?? "";
+
+        if (isAdmin)
+        {
+            using var context = DbFactory.CreateDbContext();
+            tenants = await context.Tenants
+                .IgnoreQueryFilters()
+                .OrderBy(t => t.Name)
+                .ToListAsync();
+
+            if (tenants.Any())
+            {
+                selectedTenantId = tenants[0].Id;
+            }
+        }
 
         await LoadIntegrations();
     }
@@ -418,7 +450,12 @@
 
         if (isAdmin)
         {
-            integrations = await context.ApiIntegrations.IgnoreQueryFilters().OrderByDescending(a => a.CreatedAt).ToListAsync();
+            var selectedTenantIdStr = selectedTenantId.ToString();
+            integrations = await context.ApiIntegrations
+                .IgnoreQueryFilters()
+                .Where(a => a.TenantId == selectedTenantIdStr)
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
         }
         else
         {
@@ -426,6 +463,15 @@
             integrations = await context.ApiIntegrations.OrderByDescending(a => a.CreatedAt).ToListAsync();
         }
         isLoading = false;
+    }
+
+    private async Task OnTenantChanged(ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var parsedId))
+        {
+            selectedTenantId = parsedId;
+            await LoadIntegrations();
+        }
     }
 
     private void ShowAddModal()
@@ -486,7 +532,8 @@
             }
 
             using var context = DbFactory.CreateDbContext();
-            context.CurrentTenantId = tenantId;
+            var targetTenantId = isAdmin ? selectedTenantId.ToString() : tenantId;
+            context.CurrentTenantId = targetTenantId;
 
             var encryptionKey = Configuration["ENCRYPTION_KEY"] ?? Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? "";
 
@@ -536,7 +583,7 @@
                 var newIntegration = new ApiIntegration
                 {
                     Id = Guid.NewGuid(),
-                    TenantId = tenantId,
+                    TenantId = targetTenantId,
                     Name = editModel.Name,
                     Description = editModel.Description,
                     HttpMethod = editModel.HttpMethod,
@@ -580,7 +627,8 @@
     private async Task ToggleActive(ApiIntegration api)
     {
         using var context = DbFactory.CreateDbContext();
-        context.CurrentTenantId = tenantId;
+        var targetTenantId = isAdmin ? selectedTenantId.ToString() : tenantId;
+        context.CurrentTenantId = targetTenantId;
         var entity = await context.ApiIntegrations.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == api.Id);
         if (entity != null)
         {
@@ -600,7 +648,8 @@
     {
         if (deleteTarget == null) return;
         using var context = DbFactory.CreateDbContext();
-        context.CurrentTenantId = tenantId;
+        var targetTenantId = isAdmin ? selectedTenantId.ToString() : tenantId;
+        context.CurrentTenantId = targetTenantId;
         var entity = await context.ApiIntegrations.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == deleteTarget.Id);
         if (entity != null)
         {

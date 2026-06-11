@@ -102,7 +102,7 @@
     private bool showKnowledgeBase => isAdmin || isWebsiteChatbotEnabled || isWhatsAppEnabled;
     private bool showWebsiteChatbotTools => isAdmin || isWebsiteChatbotEnabled;
     private bool showWhatsAppSection => isAdmin || isWhatsAppEnabled;
-    private bool showCrmInbox => isAdmin || (isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled));
+    private bool showCrmInbox => isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled);
     private bool showCrm => isAdmin || (isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled));
     private bool showApiIntegrations => isAdmin || (isClientUser && (isWebsiteChatbotEnabled || isWhatsAppEnabled));
 
