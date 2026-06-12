@@ -519,7 +519,12 @@
         isAdmin = user.IsInRole("Admin");
         currentTenantId = user.FindFirst("TenantId")?.Value ?? string.Empty;
 
-        webhookUrl = $"{Navigation.BaseUri.TrimEnd('/')}/api/whatsapp/webhook";
+        var chatbotPublicUrl = Configuration["Chatbot:PublicUrl"];
+        if (string.IsNullOrEmpty(chatbotPublicUrl))
+        {
+            chatbotPublicUrl = Navigation.BaseUri;
+        }
+        webhookUrl = $"{chatbotPublicUrl.TrimEnd('/')}/api/whatsapp/webhook";
 
         using var context = DbFactory.CreateDbContext();
         if (isAdmin)

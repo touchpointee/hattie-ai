@@ -672,7 +672,7 @@
     protected override async Task OnInitializedAsync()
     {
         chatbotPublicUrl = (Configuration["Chatbot:PublicUrl"] ?? NavigationFallback()).TrimEnd('/');
-        webhookUrl = $"{Navigation.BaseUri.TrimEnd('/')}/api/whatsapp/webhook";
+        webhookUrl = $"{chatbotPublicUrl}/api/whatsapp/webhook";
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         isAdmin = user.IsInRole("Admin");
