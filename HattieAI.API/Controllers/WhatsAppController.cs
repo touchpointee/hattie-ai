@@ -94,41 +94,6 @@ namespace HattieAI.API.Controllers
             return StatusCode(403, "Verification token mismatch");
         }
 
-        // GET /api/whatsapp/debug-configs
-        [HttpGet("debug-configs")]
-        public async Task<IActionResult> DebugConfigs([FromQuery] string secret)
-        {
-            if (secret != "touchpointe")
-            {
-                return Unauthorized();
-            }
-
-            var encryptionKey = _configuration["ENCRYPTION_KEY"] ?? Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? "";
-            if (string.IsNullOrEmpty(encryptionKey))
-            {
-                return Ok(new { error = "ENCRYPTION_KEY is empty" });
-            }
-
-            var configs = await _context.WhatsAppConfigs.IgnoreQueryFilters().ToListAsync();
-            var result = configs.Select(c => {
-                var decryptedVerify = "";
-                try {
-                    decryptedVerify = EncryptionHelper.Decrypt(c.VerifyToken, encryptionKey);
-                } catch (Exception ex) {
-                    decryptedVerify = "Error: " + ex.Message;
-                }
-                return new {
-                    c.Id,
-                    c.TenantId,
-                    c.PhoneNumberId,
-                    HasVerifyToken = !string.IsNullOrEmpty(c.VerifyToken),
-                    DecryptedVerifyToken = decryptedVerify
-                };
-            }).ToList();
-
-            return Ok(result);
-        }
-
         // POST /api/whatsapp/webhook (Process messages)
         [HttpPost("webhook")]
         public async Task<IActionResult> ReceiveMessage()
