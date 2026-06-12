@@ -16,6 +16,7 @@ services:
     environment:
       - 'ConnectionStrings__DefaultConnection=${CONNECTION_STRING}'
       - 'Gemini__ApiKey=${GEMINI_API_KEY}'
+      - 'ENCRYPTION_KEY=${ENCRYPTION_KEY}'
       - 'ASPNETCORE_URLS=http://+:8080'
     restart: always
     labels:
@@ -36,6 +37,7 @@ services:
     environment:
       - 'ConnectionStrings__DefaultConnection=${CONNECTION_STRING}'
       - 'Gemini__ApiKey=${GEMINI_API_KEY}'
+      - 'ENCRYPTION_KEY=${ENCRYPTION_KEY}'
       - 'Chatbot__PublicUrl=${CHATBOT_PUBLIC_URL}'
       - 'ApiSettings__BaseUrl=http://hattie-api:8080'
       - 'ASPNETCORE_URLS=http://+:8080'
